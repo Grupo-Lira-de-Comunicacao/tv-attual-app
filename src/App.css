@@ -1,0 +1,487 @@
+/* ============================================
+   TV ATTUAL — Home
+   Azul-marinho escuro + laranja + magenta
+   Mobile first · compacto
+   (estilos do player estão em components/VideoPlayer.css)
+   ============================================ */
+
+:root {
+  --azul-escuro: #0a1128;
+  --azul-card: #121a3a;
+  --azul-card-claro: #1a2450;
+  --laranja: #ff6b00;
+  --magenta: #e91e8c;
+  --azul: #2d7dff;
+  --branco: #ffffff;
+  --texto: #eaf0ff;
+  --texto-suave: #8b97c6;
+  --borda: rgba(255, 255, 255, 0.08);
+  --gradiente: linear-gradient(135deg, var(--laranja), var(--magenta));
+  --altura-menu: 60px;
+}
+
+.app {
+  min-height: 100vh;
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--azul-escuro);
+  color: var(--texto);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* padding-bottom folgado garante que o menu fixo não cubra o final do
+   conteúdo — inclui a barra de gestos do Android no modo PWA (safe-area) */
+.conteudo {
+  flex: 1;
+  padding: 10px 12px calc(var(--altura-menu) + 60px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- Cabeçalho ---------- */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(10, 17, 40, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--borda);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Ícone oficial do app (imagem real, não CSS) */
+.logo-simbolo {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  object-fit: cover;
+  display: block;
+  box-shadow: 0 0 16px rgba(255, 107, 0, 0.45);
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.logo-titulo {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--branco);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.logo-lema {
+  font-size: 0.64rem;
+  color: var(--texto-suave);
+  margin: 1px 0 0;
+}
+
+.badge-ao-vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(233, 30, 140, 0.15);
+  border: 1px solid var(--magenta);
+  color: var(--branco);
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 999px;
+  letter-spacing: 1px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--magenta);
+  animation: pulsar 1.4s ease-in-out infinite;
+}
+
+@keyframes pulsar {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+/* ---------- No Ar Agora ---------- */
+
+.no-ar {
+  background: var(--azul-card);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--laranja);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.no-ar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--laranja);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.no-ar-badge .dot {
+  background: var(--laranja);
+}
+
+.no-ar h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--branco);
+  margin: 6px 0 3px;
+}
+
+.no-ar p {
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  margin: 0;
+}
+
+.no-ar-proximo {
+  display: block;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--borda);
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+}
+
+.no-ar-proximo strong {
+  color: var(--magenta);
+}
+
+/* ---------- Botão de rádio ---------- */
+
+.botao-radio {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, rgba(45, 125, 255, 0.18), rgba(233, 30, 140, 0.14));
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  color: var(--texto);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease;
+}
+
+.botao-radio:active {
+  transform: scale(0.98);
+}
+
+.botao-radio.tocando {
+  border-color: var(--laranja);
+  box-shadow: 0 0 20px rgba(255, 107, 0, 0.25);
+}
+
+.radio-icone {
+  font-size: 1.5rem;
+}
+
+.radio-texto {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.radio-texto strong {
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  color: var(--branco);
+}
+
+.radio-texto small {
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+}
+
+.radio-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--gradiente);
+  color: var(--branco);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Área da rádio: botão + fallback do player oficial */
+.radio-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.botao-radio-abrir {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--laranja);
+  border-radius: 12px;
+  color: var(--laranja);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.botao-radio-abrir:hover {
+  background: rgba(255, 107, 0, 0.1);
+}
+
+.radio-embed {
+  width: 100%;
+  height: 160px;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: var(--azul-card);
+}
+
+/* ---------- Contato ---------- */
+
+.contato-intro {
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  margin: -4px 0 10px;
+}
+
+.contato-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contato-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--azul-card);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: var(--branco);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.contato-item:hover {
+  border-color: var(--magenta);
+}
+
+.contato-item:active {
+  transform: scale(0.98);
+}
+
+.contato-icone {
+  font-size: 1.3rem;
+}
+
+.contato-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.contato-info strong {
+  font-size: 0.9rem;
+}
+
+.contato-info small {
+  font-size: 0.74rem;
+  color: var(--texto-suave);
+}
+
+.contato-seta {
+  color: var(--laranja);
+  font-weight: 700;
+}
+
+/* ---------- Programação ---------- */
+
+.secao-titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--branco);
+  margin: 0 0 8px;
+}
+
+.programacao-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.programa {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--azul-card);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 9px 12px;
+}
+
+.programa-hora {
+  background: var(--gradiente);
+  color: var(--branco);
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.programa h3 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--branco);
+  margin: 0;
+}
+
+.programa p {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  margin: 3px 0 0;
+}
+
+/* Botão "Ver programação completa" (Home) —
+   margem negativa aproxima do rádio e das redes sociais */
+.botao-ver-programacao {
+  width: 100%;
+  margin: -4px 0;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--laranja);
+  border-radius: 12px;
+  color: var(--laranja);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.botao-ver-programacao:hover {
+  background: rgba(255, 107, 0, 0.1);
+}
+
+/* ---------- Redes sociais ---------- */
+
+/* 6 redes: 2 linhas de 3 botões no mobile */
+.redes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.rede-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--azul-card);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 9px 6px;
+  color: var(--branco);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.rede-link:hover {
+  border-color: var(--magenta);
+}
+
+.rede-link:active {
+  transform: scale(0.97);
+}
+
+.rede-icone {
+  font-size: 1.15rem;
+}
+
+/* ---------- Menu inferior ---------- */
+
+.menu-inferior {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 640px;
+  height: var(--altura-menu);
+  display: flex;
+  background: rgba(10, 17, 40, 0.96);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--borda);
+  z-index: 30;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.menu-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: var(--texto-suave);
+  font-size: 0.65rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.menu-icone {
+  font-size: 1.15rem;
+}
+
+.menu-item.ativo {
+  color: var(--laranja);
+}
+
+.menu-item.ativo .menu-icone {
+  filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.6));
+}
+
+/* ---------- Telas maiores (tablet/desktop) ---------- */
+
+@media (min-width: 640px) {
+  .conteudo {
+    padding: 16px 16px calc(var(--altura-menu) + 64px + env(safe-area-inset-bottom, 0px));
+    gap: 16px;
+  }
+
+  /* Em telas maiores as 6 redes cabem em uma linha */
+  .redes-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

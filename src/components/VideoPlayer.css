@@ -1,0 +1,464 @@
+/* ============================================
+   VideoPlayer — TV Attual
+   Modo compacto (Home) + modo expandido (modal)
+   ============================================ */
+
+/* ---------- Modo compacto ---------- */
+
+.tv-player {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  background: var(--azul-card);
+}
+
+/* Altura controlada no mobile: entre 170px e 210px
+   (48vw ≈ 173px em tela de 360px e ≈ 206px em 430px) */
+.tv-tela {
+  position: relative;
+  height: clamp(170px, 48vw, 210px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(45, 125, 255, 0.25), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(233, 30, 140, 0.2), transparent 50%),
+    #060b1e;
+}
+
+/* Embed real (YouTube/HLS/próprio) ocupa a tela inteira do player */
+.stream-embed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Tag <video> real do stream HLS — 100% da tela do player, fundo preto */
+.stream-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: contain;
+  background: #000;
+}
+
+/* Overlay central: não bloqueia os controles nativos do vídeo */
+.tv-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.tv-overlay .botao-play {
+  pointer-events: auto;
+}
+
+.tv-overlay-aviso {
+  margin: 0;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--texto);
+  pointer-events: none;
+}
+
+/* Fileira de links externos abaixo do player */
+.tv-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+}
+
+.botao-play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--branco);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.play-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradiente);
+  font-size: 1.35rem;
+  padding-left: 4px;
+  box-shadow: 0 0 28px rgba(255, 107, 0, 0.45);
+  transition: transform 0.15s ease;
+}
+
+.botao-play:active .play-icone {
+  transform: scale(0.94);
+}
+
+.tag-live {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--magenta);
+  color: var(--branco);
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+
+.tag-live .dot {
+  background: var(--branco);
+}
+
+/* Botão de ampliar (canto superior direito) */
+.botao-ampliar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  color: var(--branco);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.botao-ampliar:hover {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: var(--laranja);
+}
+
+/* Botão pausar pequeno dentro do player compacto */
+.botao-pausar-mini {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  color: var(--branco);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tv-transmissao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.tv-transmissao small {
+  color: var(--texto-suave);
+  font-weight: 400;
+  font-size: 0.7rem;
+}
+
+.barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 30px;
+}
+
+.barras span {
+  width: 6px;
+  border-radius: 4px;
+  background: var(--gradiente);
+  animation: equalizar 1s ease-in-out infinite;
+}
+
+.barras span:nth-child(1) { animation-delay: 0s; }
+.barras span:nth-child(2) { animation-delay: 0.15s; }
+.barras span:nth-child(3) { animation-delay: 0.3s; }
+.barras span:nth-child(4) { animation-delay: 0.45s; }
+.barras span:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes equalizar {
+  0%, 100% { height: 8px; }
+  50% { height: 30px; }
+}
+
+.botao-pausar {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: var(--texto);
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Estados do stream (carregando, erro, aviso) — sobrepostos ao vídeo */
+.tv-estado {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.tv-estado p {
+  margin: 0;
+}
+
+.tv-estado-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Spinner de carregamento */
+.tv-carregando {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--laranja);
+  animation: girar 0.9s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* Botões dentro do estado de erro */
+.botao-tv-web {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--laranja);
+  border-radius: 999px;
+  color: var(--laranja);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.botao-tv-web:hover {
+  background: rgba(255, 107, 0, 0.15);
+}
+
+/* Link secundário abaixo do player */
+.tv-link-web {
+  display: block;
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-align: center;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.tv-link-web:hover {
+  color: var(--laranja);
+}
+
+.tv-link-web-modal {
+  border-top: 1px solid var(--borda);
+}
+
+/* ---------- Modo expandido (modal) ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 8, 20, 0.96);
+  backdrop-filter: blur(6px);
+  padding: 12px;
+}
+
+.modal-conteudo {
+  width: 100%;
+  max-width: 960px;
+  background: var(--azul-card);
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(233, 30, 140, 0.2);
+}
+
+.modal-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.modal-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--branco);
+  letter-spacing: 0.5px;
+}
+
+.modal-fechar {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  color: var(--branco);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.modal-fechar:hover {
+  border-color: var(--magenta);
+}
+
+/* Opções de como assistir, dentro do modal */
+.modal-opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.modal-opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--azul-card-claro);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--branco);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.modal-opcao:hover {
+  border-color: var(--laranja);
+}
+
+.modal-opcao:active {
+  transform: scale(0.98);
+}
+
+.modal-opcao-icone {
+  font-size: 1.3rem;
+}
+
+.modal-opcao-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.modal-opcao-info strong {
+  font-size: 0.9rem;
+}
+
+.modal-opcao-info small {
+  font-size: 0.74rem;
+  color: var(--texto-suave);
+}
+
+.modal-opcao-seta {
+  color: var(--laranja);
+  font-weight: 700;
+}
+
+/* No modal, o player volta a ser grande (16:9, quase tela toda) */
+.tv-tela-grande {
+  height: auto;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 140px);
+  width: 100%;
+}
+
+.tv-tela-grande .botao-play {
+  font-size: 1rem;
+}
+
+.tv-tela-grande .play-icone {
+  width: 72px;
+  height: 72px;
+  font-size: 1.7rem;
+}
+
+/* ---------- Telas maiores ---------- */
+
+@media (min-width: 640px) {
+  /* No desktop o player compacto pode ser maior */
+  .tv-tela {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: 340px;
+  }
+
+  .tv-tela-grande {
+    max-height: calc(100vh - 140px);
+  }
+}
