@@ -1,7 +1,10 @@
-import { programacao } from '../data/programacao.js'
+import { obterProgramacao } from '../services/programacaoService.js'
 
-// Página Programação — grade completa do dia
+// Página Programação — grade completa do dia.
+// A origem dos dados fica encapsulada no service para permitir troca futura por API/Supabase.
 export default function Schedule() {
+  const programacao = obterProgramacao()
+
   return (
     <section className="programacao">
       <h2 className="secao-titulo">Programação</h2>
