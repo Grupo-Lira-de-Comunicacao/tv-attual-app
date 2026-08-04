@@ -4,6 +4,7 @@ import RadioPlayer from './components/RadioPlayer.jsx'
 import SocialLinks from './components/SocialLinks.jsx'
 import Contact from './components/Contact.jsx'
 import Schedule from './components/Schedule.jsx'
+import { obterEstadoProgramacao } from './services/programacaoService.js'
 import './App.css'
 
 const menuItens = [
@@ -15,6 +16,7 @@ const menuItens = [
 
 function App() {
   const [abaAtiva, setAbaAtiva] = useState('home')
+  const { atual, proximo } = obterEstadoProgramacao()
 
   return (
     <div className="app">
@@ -45,30 +47,34 @@ function App() {
           <Schedule />
         ) : (
           <>
-        {/* Player de TV (modo compacto + modal expandido) */}
-        <VideoPlayer />
+            {/* Player de TV (modo compacto + modal expandido) */}
+            <VideoPlayer />
 
-        {/* Card No Ar Agora */}
-        <section className="no-ar">
-          <span className="no-ar-badge"><span className="dot" /> NO AR AGORA</span>
-          <h2>Jornal Attual</h2>
-          <p>As principais notícias de Caçapava e do Vale do Paraíba.</p>
-          <span className="no-ar-proximo"><strong>A seguir:</strong> Noite Attual · 23:00</span>
-        </section>
+            {/* Card No Ar Agora — preparado para futura fonte dinâmica */}
+            <section className="no-ar">
+              <span className="no-ar-badge"><span className="dot" /> NO AR AGORA</span>
+              <h2>{atual?.titulo || 'TV Attual'}</h2>
+              <p>{atual?.descricao || 'Acompanhe a programação ao vivo da TV Attual.'}</p>
+              {proximo && (
+                <span className="no-ar-proximo">
+                  <strong>A seguir:</strong> {proximo.titulo} · {proximo.hora}
+                </span>
+              )}
+            </section>
 
-        {/* Botão de rádio */}
-        <RadioPlayer />
+            {/* Botão de rádio */}
+            <RadioPlayer />
 
-        {/* Atalho para a página Programação */}
-        <button
-          className="botao-ver-programacao"
-          onClick={() => setAbaAtiva('programacao')}
-        >
-          Ver programação completa →
-        </button>
+            {/* Atalho para a página Programação */}
+            <button
+              className="botao-ver-programacao"
+              onClick={() => setAbaAtiva('programacao')}
+            >
+              Ver programação completa →
+            </button>
 
-        {/* Redes sociais */}
-        <SocialLinks />
+            {/* Redes sociais */}
+            <SocialLinks />
           </>
         )}
       </main>
