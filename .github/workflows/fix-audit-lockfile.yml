@@ -1,0 +1,55 @@
+name: Fix AttualPlay Audit Lockfile
+
+on:
+  push:
+    branches:
+      - codex/auditoria-attualplay-v1
+
+permissions:
+  contents: write
+
+jobs:
+  fix-lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/auditoria-attualplay-v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install current dependencies
+        run: npm ci
+
+      - name: Apply safe audit fixes to lockfile only
+        run: npm audit fix --package-lock-only
+
+      - name: Reinstall from corrected lockfile
+        run: npm ci
+
+      - name: Require clean high-severity audit
+        run: npm audit --audit-level=high
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Commit corrected lockfile when changed
+        shell: bash
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "No lockfile changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: corrigir dependencias vulneraveis do build"
+          git push origin HEAD:codex/auditoria-attualplay-v1
