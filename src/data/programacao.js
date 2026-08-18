@@ -1,10 +1,10 @@
 // Programação da TV Attual (dados mockados — futuramente virão de API/painel)
 
 export const programacao = [
-  { hora: '07:00', titulo: 'Bom Dia Attual', descricao: 'Notícias de Caçapava e região para começar o dia.' },
-  { hora: '10:00', titulo: 'Manhã Attual', descricao: 'Música, variedades e participação do público.' },
-  { hora: '19:00', titulo: 'Jornal Attual', descricao: 'As principais notícias do dia com credibilidade.' },
-  { hora: '23:00', titulo: 'Noite Attual', descricao: 'Entretenimento e convidados especiais.' },
+  { hora: '07:00', titulo: 'Bom Dia Attual', descricao: 'Notícias de Caçapava e região para começar o dia.', tipo: 'TV + Rádio' },
+  { hora: '10:00', titulo: 'Manhã Attual', descricao: 'Música, variedades e participação do público.', tipo: 'Rádio' },
+  { hora: '19:00', titulo: 'Jornal Attual', descricao: 'As principais notícias do dia com credibilidade.', tipo: 'TV + Rádio' },
+  { hora: '23:00', titulo: 'Noite Attual', descricao: 'Entretenimento e convidados especiais.', tipo: 'Rádio' },
 ]
 
 // Próximos programas a partir do horário atual (máximo `quantidade`).
