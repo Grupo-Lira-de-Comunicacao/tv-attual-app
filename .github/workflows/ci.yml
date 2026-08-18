@@ -56,6 +56,10 @@ jobs:
           echo "project_by_name_http=$project_name_code"
           if [ "$project_id_code" = "200" ]; then
             echo "project_by_id_name=$(jq -r '.name // empty' /tmp/vercel-project-id.json)"
+            echo "git_link_type=$(jq -r '.link.type // "none"' /tmp/vercel-project-id.json)"
+            echo "git_link_repo=$(jq -r '.link.repo // "none"' /tmp/vercel-project-id.json)"
+            echo "git_link_org=$(jq -r '.link.org // "none"' /tmp/vercel-project-id.json)"
+            echo "git_link_production_branch=$(jq -r '.link.productionBranch // "none"' /tmp/vercel-project-id.json)"
           fi
           if [ "$project_name_code" = "200" ]; then
             echo "project_by_name_name=$(jq -r '.name // empty' /tmp/vercel-project-name.json)"
