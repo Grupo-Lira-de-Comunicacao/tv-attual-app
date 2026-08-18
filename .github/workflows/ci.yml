@@ -39,3 +39,24 @@ jobs:
 
       - name: Build production bundle
         run: npm run build
+
+      - name: Diagnose Vercel API access safely
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        shell: bash
+        run: |
+          set +x
+          user_code=$(curl -sS -o /tmp/vercel-user.json -w "%{http_code}" -H "Authorization: Bearer $VERCEL_TOKEN" https://api.vercel.com/v2/user)
+          project_id_code=$(curl -sS -o /tmp/vercel-project-id.json -w "%{http_code}" -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID")
+          project_name_code=$(curl -sS -o /tmp/vercel-project-name.json -w "%{http_code}" -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects/tv-attual-app?teamId=$VERCEL_ORG_ID")
+          echo "user_http=$user_code"
+          echo "project_by_id_http=$project_id_code"
+          echo "project_by_name_http=$project_name_code"
+          if [ "$project_id_code" = "200" ]; then
+            echo "project_by_id_name=$(jq -r '.name // empty' /tmp/vercel-project-id.json)"
+          fi
+          if [ "$project_name_code" = "200" ]; then
+            echo "project_by_name_name=$(jq -r '.name // empty' /tmp/vercel-project-name.json)"
+          fi
