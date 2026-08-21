@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { valeDecideCandidates, valeDecideCidadesPrioritarias } from '../data/valeDecideCandidates.js'
+import { carregarCandidatosPublicados } from '../services/valeDecideApi.js'
 import { filtrarCandidatos, listarOpcoes, resumirPorCidade } from '../services/valeDecideService.js'
 import './ValeDecide.css'
 
@@ -8,12 +9,32 @@ export default function ValeDecide({ onVoltar }) {
   const [cargo, setCargo] = useState('Todos')
   const [busca, setBusca] = useState('')
   const [selecionado, setSelecionado] = useState(null)
+  const [baseCandidatos, setBaseCandidatos] = useState(valeDecideCandidates)
+  const [origemBase, setOrigemBase] = useState('local')
 
-  const cargos = useMemo(() => listarOpcoes(valeDecideCandidates, 'cargo'), [])
-  const resumo = useMemo(() => resumirPorCidade(valeDecideCandidates), [])
+  useEffect(() => {
+    let ativo = true
+
+    carregarCandidatosPublicados()
+      .then((dados) => {
+        if (!ativo || !dados.length) return
+        setBaseCandidatos(dados)
+        setOrigemBase('supabase')
+      })
+      .catch(() => {
+        if (ativo) setOrigemBase('local')
+      })
+
+    return () => {
+      ativo = false
+    }
+  }, [])
+
+  const cargos = useMemo(() => listarOpcoes(baseCandidatos, 'cargo'), [baseCandidatos])
+  const resumo = useMemo(() => resumirPorCidade(baseCandidatos), [baseCandidatos])
   const candidatos = useMemo(
-    () => filtrarCandidatos(valeDecideCandidates, { cidade, cargo, busca }),
-    [cidade, cargo, busca],
+    () => filtrarCandidatos(baseCandidatos, { cidade, cargo, busca }),
+    [baseCandidatos, cidade, cargo, busca],
   )
 
   if (selecionado) {
@@ -99,7 +120,11 @@ export default function ValeDecide({ onVoltar }) {
         )}
       </div>
 
-      <p className="vale-aviso">Base em construção. Situação eleitoral e dados de mandato serão atualizados a partir de fontes oficiais antes da publicação definitiva.</p>
+      <p className="vale-aviso">
+        {origemBase === 'supabase'
+          ? 'Base verificada do Banco Vale Decide. Dados de mandato e situação eleitoral são publicados após revisão editorial.'
+          : 'Base de contingência em uso. O Banco Vale Decide já está conectado e assumirá a exibição conforme os registros forem verificados e publicados.'}
+      </p>
     </section>
   )
 }
