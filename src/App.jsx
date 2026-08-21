@@ -5,6 +5,7 @@ import SocialLinks from './components/SocialLinks.jsx'
 import Contact from './components/Contact.jsx'
 import Schedule from './components/Schedule.jsx'
 import Participation from './components/Participation.jsx'
+import ValeDecide from './components/ValeDecide.jsx'
 import { obterEstadoProgramacao } from './services/programacaoService.js'
 import './App.css'
 
@@ -37,7 +38,6 @@ function App() {
 
   return (
     <div className="app">
-      {/* Cabeçalho com logo e lema */}
       <header className="header">
         <div className="logo-area">
           <img
@@ -64,12 +64,12 @@ function App() {
           <Schedule onVoltar={() => setAbaAtiva('home')} />
         ) : abaAtiva === 'chat' ? (
           <Participation onVoltar={() => setAbaAtiva(abaAnterior)} />
+        ) : abaAtiva === 'vale-decide' ? (
+          <ValeDecide onVoltar={() => setAbaAtiva('home')} />
         ) : (
           <>
-            {/* Player de TV (modo compacto + modal expandido) */}
             <VideoPlayer />
 
-            {/* Card No Ar Agora — preparado para futura fonte dinâmica */}
             <section className="no-ar">
               <span className="no-ar-badge"><span className="dot" /> NO AR AGORA</span>
               <h2>{atual?.titulo || 'TV Attual'}</h2>
@@ -81,10 +81,8 @@ function App() {
               )}
             </section>
 
-            {/* Botão de rádio */}
             <RadioPlayer />
 
-            {/* Acesso em destaque para as formas de participação */}
             <button
               className="botao-participacao-home"
               onClick={abrirParticipacao}
@@ -97,7 +95,13 @@ function App() {
               <span className="botao-participacao-seta" aria-hidden="true">→</span>
             </button>
 
-            {/* Atalho para a página Programação */}
+            <button
+              className="botao-ver-programacao"
+              onClick={() => setAbaAtiva('vale-decide')}
+            >
+              🗳️ Vale Decide 2026 — conheça os candidatos →
+            </button>
+
             <button
               className="botao-ver-programacao"
               onClick={() => setAbaAtiva('programacao')}
@@ -105,13 +109,11 @@ function App() {
               Ver programação completa →
             </button>
 
-            {/* Redes sociais */}
             <SocialLinks />
           </>
         )}
       </main>
 
-      {/* Menu inferior fixo */}
       <nav className="menu-inferior">
         {menuItens.map((item) => (
           <button
