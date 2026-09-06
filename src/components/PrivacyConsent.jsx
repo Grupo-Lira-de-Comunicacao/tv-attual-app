@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react'
 import {
   getMatrixConsent,
   hasMatrixConsentDecision,
+  MATRIX_POLICY_VERSION,
   setMatrixConsent,
   startMatrixSession,
 } from '../services/matrixTelemetry.js'
 import './PrivacyConsent.css'
-
-const POLICY_VERSION = 'attualplay-privacy-v1-2026-09-06'
 
 export default function PrivacyConsent({ onAnalyticsGranted }) {
   const [open, setOpen] = useState(!hasMatrixConsentDecision())
@@ -25,7 +24,7 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
       analytics,
       personalization: false,
       marketing: false,
-      policy_version: POLICY_VERSION,
+      policy_version: MATRIX_POLICY_VERSION,
     })
     setConsent(next)
     setOpen(false)
