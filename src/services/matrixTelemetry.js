@@ -28,6 +28,7 @@ function consentFallback() {
     analytics: ANALYTICS_DEFAULT,
     personalization: false,
     marketing: false,
+    adult_confirmed: false,
     policy_version: MATRIX_POLICY_VERSION,
   }
 }
@@ -60,7 +61,8 @@ export function hasMatrixConsentDecision() {
   if (!raw) return false
   try {
     const parsed = JSON.parse(raw)
-    return parsed.policy_version === MATRIX_POLICY_VERSION && typeof parsed.analytics === 'boolean'
+    if (parsed.policy_version !== MATRIX_POLICY_VERSION || typeof parsed.analytics !== 'boolean') return false
+    return parsed.analytics === false || parsed.adult_confirmed === true
   } catch {
     return false
   }
@@ -73,12 +75,15 @@ export function getMatrixConsent() {
   try {
     const parsed = JSON.parse(raw)
     if (parsed.policy_version !== MATRIX_POLICY_VERSION) return fallback
+    const adultConfirmed = parsed.adult_confirmed === true
     return {
       ...fallback,
-      analytics: parsed.analytics === true,
+      analytics: parsed.analytics === true && adultConfirmed,
+      adult_confirmed: adultConfirmed,
       personalization: false,
       marketing: false,
       policy_version: MATRIX_POLICY_VERSION,
+      decided_at: typeof parsed.decided_at === 'string' ? parsed.decided_at : undefined,
     }
   } catch {
     return fallback
@@ -86,11 +91,13 @@ export function getMatrixConsent() {
 }
 
 export function setMatrixConsent(next) {
+  const adultConfirmed = next?.adult_confirmed === true
   const value = {
     essential: true,
-    analytics: next?.analytics === true,
+    analytics: next?.analytics === true && adultConfirmed,
     personalization: false,
     marketing: false,
+    adult_confirmed: adultConfirmed,
     policy_version: MATRIX_POLICY_VERSION,
     decided_at: new Date().toISOString(),
   }
@@ -137,7 +144,7 @@ function classifyReferrer() {
 
 function readyForAnalytics() {
   const consent = getMatrixConsent()
-  return TRACKING_ENABLED && hasMatrixConsentDecision() && Boolean(API_URL) && Boolean(PUBLIC_KEY) && consent.analytics === true
+  return TRACKING_ENABLED && hasMatrixConsentDecision() && Boolean(API_URL) && Boolean(PUBLIC_KEY) && consent.analytics === true && consent.adult_confirmed === true
 }
 
 export async function trackMatrixEvent(eventType, properties = {}, object = null) {
