@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import VideoPlayer from './components/VideoPlayer.jsx'
 import RadioPlayer from './components/RadioPlayer.jsx'
 import SocialLinks from './components/SocialLinks.jsx'
@@ -6,6 +6,7 @@ import Contact from './components/Contact.jsx'
 import Schedule from './components/Schedule.jsx'
 import Participation from './components/Participation.jsx'
 import { obterEstadoProgramacao } from './services/programacaoService.js'
+import { trackMatrixPage } from './services/matrixTelemetry.js'
 import './App.css'
 
 const menuItens = [
@@ -19,6 +20,10 @@ function App() {
   const [abaAtiva, setAbaAtiva] = useState('home')
   const [abaAnterior, setAbaAnterior] = useState('home')
   const { atual, proximo } = obterEstadoProgramacao()
+
+  useEffect(() => {
+    void trackMatrixPage(abaAtiva)
+  }, [abaAtiva])
 
   function abrirParticipacao() {
     if (abaAtiva !== 'chat') {
