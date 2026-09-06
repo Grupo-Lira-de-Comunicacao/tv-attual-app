@@ -5,6 +5,7 @@ import SocialLinks from './components/SocialLinks.jsx'
 import Contact from './components/Contact.jsx'
 import Schedule from './components/Schedule.jsx'
 import Participation from './components/Participation.jsx'
+import PrivacyConsent from './components/PrivacyConsent.jsx'
 import { obterEstadoProgramacao } from './services/programacaoService.js'
 import { trackMatrixPage } from './services/matrixTelemetry.js'
 import './App.css'
@@ -115,6 +116,8 @@ function App() {
           </>
         )}
       </main>
+
+      <PrivacyConsent onAnalyticsGranted={() => trackMatrixPage(abaAtiva)} />
 
       {/* Menu inferior fixo */}
       <nav className="menu-inferior">
