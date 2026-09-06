@@ -11,6 +11,7 @@ import './PrivacyConsent.css'
 export default function PrivacyConsent({ onAnalyticsGranted }) {
   const [open, setOpen] = useState(!hasMatrixConsentDecision())
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [adultConfirmed, setAdultConfirmed] = useState(() => getMatrixConsent().adult_confirmed === true)
   const [consent, setConsent] = useState(() => getMatrixConsent())
 
   const analyticsEnabled = consent.analytics === true
@@ -22,13 +23,15 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
   function applyChoice(analytics) {
     const next = setMatrixConsent({
       analytics,
+      adult_confirmed: analytics ? adultConfirmed : false,
       personalization: false,
       marketing: false,
       policy_version: MATRIX_POLICY_VERSION,
     })
     setConsent(next)
+    if (!analytics) setAdultConfirmed(false)
     setOpen(false)
-    if (analytics) {
+    if (next.analytics) {
       void startMatrixSession()
       onAnalyticsGranted?.()
     }
@@ -40,7 +43,9 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
         type="button"
         className="privacidade-atalho"
         onClick={() => {
-          setConsent(getMatrixConsent())
+          const current = getMatrixConsent()
+          setConsent(current)
+          setAdultConfirmed(current.adult_confirmed === true)
           setDetailsOpen(true)
         }}
         aria-label="Abrir preferências de privacidade"
@@ -56,6 +61,14 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
               A TV Attual pode usar dados analíticos minimizados para entender, de forma pseudonimizada,
               quais áreas do app são usadas e por quanto tempo TV e rádio são consumidas. Isso é opcional.
             </p>
+            <label className="privacidade-maioridade">
+              <input
+                type="checkbox"
+                checked={adultConfirmed}
+                onChange={(event) => setAdultConfirmed(event.target.checked)}
+              />
+              <span>Confirmo que tenho 18 anos ou mais para autorizar analytics.</span>
+            </label>
             <button type="button" className="privacidade-link" onClick={() => setDetailsOpen(true)}>
               Ver detalhes de privacidade
             </button>
@@ -64,7 +77,7 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
             <button type="button" className="privacidade-botao" onClick={() => applyChoice(false)}>
               Rejeitar analytics
             </button>
-            <button type="button" className="privacidade-botao" onClick={() => applyChoice(true)}>
+            <button type="button" className="privacidade-botao" disabled={!adultConfirmed} onClick={() => applyChoice(true)}>
               Aceitar analytics
             </button>
           </div>
@@ -104,7 +117,8 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
             <p>
               Medir uso do aplicativo e melhorar experiência, estabilidade e relevância editorial. Nesta fase,
               o tratamento analítico só ocorre mediante consentimento. A escolha fica registrada no seu navegador,
-              e cada evento enviado carrega a versão da política e o estado do consentimento.
+              e cada evento enviado carrega a versão da política e o estado do consentimento. O analytics opcional
+              é restrito a usuários que confirmem ter 18 anos ou mais.
             </p>
 
             <h3>Seus controles</h3>
@@ -114,12 +128,21 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
               Para exercer outros direitos previstos na LGPD, use os canais oficiais da TV Attual na área Contato.
             </p>
 
+            <label className="privacidade-maioridade">
+              <input
+                type="checkbox"
+                checked={adultConfirmed}
+                onChange={(event) => setAdultConfirmed(event.target.checked)}
+              />
+              <span>Confirmo que tenho 18 anos ou mais para autorizar analytics.</span>
+            </label>
+
             <div className="privacidade-status" aria-live="polite">{statusLabel}</div>
             <div className="privacidade-acoes privacidade-acoes-modal">
               <button type="button" className="privacidade-botao" onClick={() => applyChoice(false)}>
                 Rejeitar / revogar analytics
               </button>
-              <button type="button" className="privacidade-botao" onClick={() => applyChoice(true)}>
+              <button type="button" className="privacidade-botao" disabled={!adultConfirmed} onClick={() => applyChoice(true)}>
                 Aceitar analytics
               </button>
             </div>
