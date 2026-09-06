@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Hls from 'hls.js'
 import { LINKS } from '../config/links.js'
+import { matrixDurationBucket, trackMatrixEvent } from '../services/matrixTelemetry.js'
 import './VideoPlayer.css'
 
 /*
@@ -12,6 +13,7 @@ import './VideoPlayer.css'
 */
 function StreamPlayer() {
   const videoRef = useRef(null)
+  const watchStartedAtRef = useRef(null)
   const [tocando, setTocando] = useState(false)
   const [aviso, setAviso] = useState('')
 
@@ -37,18 +39,38 @@ function StreamPlayer() {
       setAviso('Não foi possível carregar a transmissão agora.')
     }
 
+    const registrarParada = () => {
+      if (!watchStartedAtRef.current) return
+      const seconds = (Date.now() - watchStartedAtRef.current) / 1000
+      watchStartedAtRef.current = null
+      void trackMatrixEvent('tv_stopped', {
+        channel_key: 'tv-attual-live',
+        watch_seconds_bucket: matrixDurationBucket(seconds),
+      })
+    }
+
     const aoTocar = () => {
       setTocando(true)
       setAviso('')
+      if (!watchStartedAtRef.current) {
+        watchStartedAtRef.current = Date.now()
+        void trackMatrixEvent('tv_started', { channel_key: 'tv-attual-live' })
+      }
     }
-    const aoPausar = () => setTocando(false)
+    const aoPausar = () => {
+      setTocando(false)
+      registrarParada()
+    }
 
     video.addEventListener('playing', aoTocar)
     video.addEventListener('pause', aoPausar)
+    video.addEventListener('ended', aoPausar)
 
     return () => {
+      registrarParada()
       video.removeEventListener('playing', aoTocar)
       video.removeEventListener('pause', aoPausar)
+      video.removeEventListener('ended', aoPausar)
       if (hls) hls.destroy()
     }
   }, [])

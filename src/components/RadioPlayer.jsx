@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { LINKS, linkConfigurado } from '../config/links.js'
+import { matrixDurationBucket, trackMatrixEvent } from '../services/matrixTelemetry.js'
 
 /*
   Rádio Attual:
@@ -12,9 +13,35 @@ export default function RadioPlayer() {
   const [falhou, setFalhou] = useState(false)
   const [embedAberto, setEmbedAberto] = useState(false)
   const audioRef = useRef(null)
+  const listeningStartedAtRef = useRef(null)
   const radioConfigurada = linkConfigurado(LINKS.RADIO_STREAM_URL)
 
+  function registrarParada() {
+    if (!listeningStartedAtRef.current) return
+    const seconds = (Date.now() - listeningStartedAtRef.current) / 1000
+    listeningStartedAtRef.current = null
+    void trackMatrixEvent('radio_stopped', {
+      station_key: 'radio-attual-live',
+      listen_seconds_bucket: matrixDurationBucket(seconds),
+    })
+  }
+
+  function aoTocar() {
+    setTocando(true)
+    setFalhou(false)
+    if (!listeningStartedAtRef.current) {
+      listeningStartedAtRef.current = Date.now()
+      void trackMatrixEvent('radio_started', { station_key: 'radio-attual-live' })
+    }
+  }
+
+  function aoPausar() {
+    setTocando(false)
+    registrarParada()
+  }
+
   function marcarFalha() {
+    registrarParada()
     setTocando(false)
     setFalhou(true)
   }
@@ -28,17 +55,10 @@ export default function RadioPlayer() {
 
     if (tocando) {
       audio.pause()
-      setTocando(false)
       return
     }
 
-    audio
-      .play()
-      .then(() => {
-        setTocando(true)
-        setFalhou(false)
-      })
-      .catch(marcarFalha)
+    audio.play().catch(marcarFalha)
   }
 
   return (
@@ -48,6 +68,9 @@ export default function RadioPlayer() {
           ref={audioRef}
           src={LINKS.RADIO_STREAM_URL}
           preload="none"
+          onPlay={aoTocar}
+          onPause={aoPausar}
+          onEnded={aoPausar}
           onError={marcarFalha}
         />
       )}
