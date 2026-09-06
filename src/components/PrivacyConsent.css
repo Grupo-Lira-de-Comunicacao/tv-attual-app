@@ -1,0 +1,177 @@
+.privacidade-atalho {
+  position: fixed;
+  right: 12px;
+  bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  z-index: 42;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(10, 17, 40, 0.94);
+  color: #fff;
+  padding: 8px 11px;
+  font: 700 0.7rem 'Segoe UI', system-ui, sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.privacidade-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(calc(100% - 20px), 620px);
+  z-index: 60;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  background: #121a3a;
+  color: #eaf0ff;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  padding: 14px;
+}
+
+.privacidade-banner-conteudo strong {
+  display: block;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 5px;
+}
+
+.privacidade-banner-conteudo p,
+.privacidade-modal p,
+.privacidade-modal li {
+  color: #b7c1e5;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.privacidade-banner-conteudo p {
+  margin: 0 0 7px;
+}
+
+.privacidade-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #9fc1ff;
+  padding: 0;
+  font: 700 0.73rem 'Segoe UI', system-ui, sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.privacidade-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.privacidade-botao {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 11px;
+  background: #1a2450;
+  color: #fff;
+  padding: 8px 10px;
+  font: 800 0.74rem 'Segoe UI', system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.privacidade-botao:focus-visible,
+.privacidade-link:focus-visible,
+.privacidade-atalho:focus-visible,
+.privacidade-fechar:focus-visible {
+  outline: 3px solid #2d7dff;
+  outline-offset: 2px;
+}
+
+.privacidade-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  align-items: end;
+  background: rgba(0, 0, 0, 0.68);
+  padding: 12px;
+}
+
+.privacidade-modal {
+  position: relative;
+  width: min(100%, 620px);
+  max-height: 88vh;
+  overflow: auto;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: #0f1734;
+  color: #eaf0ff;
+  padding: 20px 16px 16px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
+}
+
+.privacidade-modal h2 {
+  margin: 4px 38px 8px 0;
+  color: #fff;
+  font-size: 1.25rem;
+}
+
+.privacidade-modal h3 {
+  margin: 16px 0 5px;
+  color: #fff;
+  font-size: 0.86rem;
+}
+
+.privacidade-modal p {
+  margin: 0;
+}
+
+.privacidade-modal ul {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+.privacidade-eyebrow {
+  color: #ff6b00;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+
+.privacidade-fechar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: #1a2450;
+  color: #fff;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.privacidade-status {
+  margin-top: 16px;
+  border: 1px solid rgba(45, 125, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(45, 125, 255, 0.09);
+  padding: 9px 10px;
+  color: #dbe7ff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.privacidade-acoes-modal {
+  position: sticky;
+  bottom: -16px;
+  margin: 14px -16px -16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: #0f1734;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 420px) {
+  .privacidade-acoes {
+    grid-template-columns: 1fr;
+  }
+}
