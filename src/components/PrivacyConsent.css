@@ -47,6 +47,25 @@
   margin: 0 0 7px;
 }
 
+.privacidade-maioridade {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 9px 0;
+  color: #dbe7ff;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.privacidade-maioridade input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #2d7dff;
+}
+
 .privacidade-link {
   appearance: none;
   border: 0;
@@ -76,10 +95,16 @@
   cursor: pointer;
 }
 
+.privacidade-botao:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+
 .privacidade-botao:focus-visible,
 .privacidade-link:focus-visible,
 .privacidade-atalho:focus-visible,
-.privacidade-fechar:focus-visible {
+.privacidade-fechar:focus-visible,
+.privacidade-maioridade input:focus-visible {
   outline: 3px solid #2d7dff;
   outline-offset: 2px;
 }
