@@ -3,6 +3,8 @@ const PUBLIC_KEY = String(import.meta.env.VITE_MATRIX_PUBLIC_KEY || '')
 const TRACKING_ENABLED = String(import.meta.env.VITE_MATRIX_TRACKING_ENABLED || '').toLowerCase() === 'true'
 const ANALYTICS_DEFAULT = String(import.meta.env.VITE_MATRIX_ANALYTICS_DEFAULT || '').toLowerCase() === 'granted'
 
+export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v1-2026-09-06'
+
 const CONSENT_STORAGE_KEY = 'matrix:consent:v1'
 const ANON_STORAGE_KEY = 'matrix:anonymous-id:v1'
 const SESSION_STORAGE_KEY = 'matrix:session-id:v1'
@@ -14,6 +16,21 @@ function safeGet(storage, key) {
 
 function safeSet(storage, key, value) {
   try { storage.setItem(key, value) } catch { /* storage unavailable: tracking remains best effort */ }
+}
+
+function safeRemove(storage, key) {
+  try { storage.removeItem(key) } catch { /* storage unavailable */ }
+}
+
+function consentFallback() {
+  return {
+    essential: true,
+    analytics: ANALYTICS_DEFAULT,
+    personalization: false,
+    marketing: false,
+    adult_confirmed: false,
+    policy_version: MATRIX_POLICY_VERSION,
+  }
 }
 
 function newId() {
@@ -39,24 +56,34 @@ function getSessionId() {
   return value
 }
 
-export function getMatrixConsent() {
-  const fallback = {
-    essential: true,
-    analytics: ANALYTICS_DEFAULT,
-    personalization: false,
-    marketing: false,
-    policy_version: 'matrix-consent-v1',
+export function hasMatrixConsentDecision() {
+  const raw = safeGet(localStorage, CONSENT_STORAGE_KEY)
+  if (!raw) return false
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed.policy_version !== MATRIX_POLICY_VERSION || typeof parsed.analytics !== 'boolean') return false
+    return parsed.analytics === false || parsed.adult_confirmed === true
+  } catch {
+    return false
   }
+}
+
+export function getMatrixConsent() {
+  const fallback = consentFallback()
   const raw = safeGet(localStorage, CONSENT_STORAGE_KEY)
   if (!raw) return fallback
   try {
     const parsed = JSON.parse(raw)
+    if (parsed.policy_version !== MATRIX_POLICY_VERSION) return fallback
+    const adultConfirmed = parsed.adult_confirmed === true
     return {
       ...fallback,
-      analytics: parsed.analytics === true,
-      personalization: parsed.personalization === true,
-      marketing: parsed.marketing === true,
-      policy_version: String(parsed.policy_version || fallback.policy_version).slice(0, 80),
+      analytics: parsed.analytics === true && adultConfirmed,
+      adult_confirmed: adultConfirmed,
+      personalization: false,
+      marketing: false,
+      policy_version: MATRIX_POLICY_VERSION,
+      decided_at: typeof parsed.decided_at === 'string' ? parsed.decided_at : undefined,
     }
   } catch {
     return fallback
@@ -64,15 +91,24 @@ export function getMatrixConsent() {
 }
 
 export function setMatrixConsent(next) {
-  const current = getMatrixConsent()
+  const adultConfirmed = next?.adult_confirmed === true
   const value = {
-    ...current,
-    analytics: next?.analytics === true,
-    personalization: next?.personalization === true,
-    marketing: next?.marketing === true,
-    policy_version: String(next?.policy_version || current.policy_version).slice(0, 80),
+    essential: true,
+    analytics: next?.analytics === true && adultConfirmed,
+    personalization: false,
+    marketing: false,
+    adult_confirmed: adultConfirmed,
+    policy_version: MATRIX_POLICY_VERSION,
+    decided_at: new Date().toISOString(),
   }
   safeSet(localStorage, CONSENT_STORAGE_KEY, JSON.stringify(value))
+
+  if (!value.analytics) {
+    safeRemove(localStorage, ANON_STORAGE_KEY)
+    safeRemove(sessionStorage, SESSION_STORAGE_KEY)
+    safeRemove(sessionStorage, SESSION_STARTED_KEY)
+  }
+
   return value
 }
 
@@ -108,7 +144,7 @@ function classifyReferrer() {
 
 function readyForAnalytics() {
   const consent = getMatrixConsent()
-  return TRACKING_ENABLED && Boolean(API_URL) && Boolean(PUBLIC_KEY) && consent.analytics === true
+  return TRACKING_ENABLED && hasMatrixConsentDecision() && Boolean(API_URL) && Boolean(PUBLIC_KEY) && consent.analytics === true && consent.adult_confirmed === true
 }
 
 export async function trackMatrixEvent(eventType, properties = {}, object = null) {
