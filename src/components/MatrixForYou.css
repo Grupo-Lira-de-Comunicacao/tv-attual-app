@@ -1,0 +1,117 @@
+.matrix-for-you {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(20,20,24,.96), rgba(31,31,38,.92));
+  box-shadow: 0 12px 34px rgba(0,0,0,.2);
+}
+
+.matrix-for-you-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.matrix-for-you-header h2 {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+}
+
+.matrix-for-you-eyebrow {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  opacity: .7;
+}
+
+.matrix-for-you-badge {
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: .68rem;
+  background: rgba(255,255,255,.09);
+  white-space: nowrap;
+}
+
+.matrix-for-you-intro {
+  margin: 10px 0 14px;
+  font-size: .88rem;
+  opacity: .78;
+  line-height: 1.45;
+}
+
+.matrix-for-you-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.matrix-for-you-card {
+  width: 100%;
+  min-height: 94px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  text-align: left;
+  color: inherit;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.matrix-for-you-card:hover,
+.matrix-for-you-card:focus-visible {
+  background: rgba(255,255,255,.1);
+  border-color: rgba(255,255,255,.2);
+}
+
+.matrix-for-you-icon {
+  font-size: 1.5rem;
+  flex: 0 0 auto;
+}
+
+.matrix-for-you-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.matrix-for-you-copy strong {
+  font-size: .88rem;
+}
+
+.matrix-for-you-copy small {
+  font-size: .72rem;
+  opacity: .7;
+  line-height: 1.35;
+}
+
+.matrix-for-you-arrow {
+  opacity: .65;
+}
+
+.matrix-for-you-note {
+  display: block;
+  margin-top: 12px;
+  font-size: .68rem;
+  line-height: 1.4;
+  opacity: .58;
+}
+
+@media (max-width: 760px) {
+  .matrix-for-you-grid {
+    grid-template-columns: 1fr;
+  }
+  .matrix-for-you-header {
+    align-items: flex-start;
+  }
+  .matrix-for-you-badge {
+    white-space: normal;
+    text-align: right;
+  }
+}
