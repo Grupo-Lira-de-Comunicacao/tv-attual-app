@@ -3,10 +3,11 @@ const PUBLIC_KEY = String(import.meta.env.VITE_MATRIX_PUBLIC_KEY || '')
 const TRACKING_ENABLED = String(import.meta.env.VITE_MATRIX_TRACKING_ENABLED || '').toLowerCase() === 'true'
 const ANALYTICS_DEFAULT = String(import.meta.env.VITE_MATRIX_ANALYTICS_DEFAULT || '').toLowerCase() === 'granted'
 
-export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v3-2026-09-07'
+export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v4-2026-09-07'
 
 const CONSENT_STORAGE_KEY = 'matrix:consent:v1'
 const ANON_STORAGE_KEY = 'matrix:anonymous-id:v1'
+const PERSON_SESSION_STORAGE_KEY = 'matrix:person-session:v1'
 const SESSION_STORAGE_KEY = 'matrix:session-id:v1'
 const SESSION_STARTED_KEY = 'matrix:session-started:v1'
 
@@ -15,7 +16,7 @@ function safeGet(storage, key) {
 }
 
 function safeSet(storage, key, value) {
-  try { storage.setItem(key, value) } catch { /* storage unavailable: tracking remains best effort */ }
+  try { storage.setItem(key, value) } catch { /* storage unavailable: Matrix remains best effort */ }
 }
 
 function safeRemove(storage, key) {
@@ -38,7 +39,7 @@ function newId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`
 }
 
-function getAnonymousId() {
+export function getMatrixAnonymousId() {
   let value = safeGet(localStorage, ANON_STORAGE_KEY)
   if (!value) {
     value = `anon_${newId()}`
@@ -54,6 +55,52 @@ function getSessionId() {
     safeSet(sessionStorage, SESSION_STORAGE_KEY, value)
   }
   return value
+}
+
+export function getMatrixIdentityState() {
+  const raw = safeGet(localStorage, PERSON_SESSION_STORAGE_KEY)
+  if (!raw) return { connected: false, person_id: null, expires_at: null }
+  try {
+    const parsed = JSON.parse(raw)
+    const expiresAt = typeof parsed.expires_at === 'string' ? parsed.expires_at : ''
+    if (!parsed.person_token || !parsed.person_id || !expiresAt || Number.isNaN(Date.parse(expiresAt)) || Date.parse(expiresAt) <= Date.now()) {
+      safeRemove(localStorage, PERSON_SESSION_STORAGE_KEY)
+      return { connected: false, person_id: null, expires_at: null }
+    }
+    return { connected: true, person_id: String(parsed.person_id), expires_at: expiresAt }
+  } catch {
+    safeRemove(localStorage, PERSON_SESSION_STORAGE_KEY)
+    return { connected: false, person_id: null, expires_at: null }
+  }
+}
+
+function getMatrixPersonToken() {
+  const state = getMatrixIdentityState()
+  if (!state.connected) return null
+  try {
+    const parsed = JSON.parse(safeGet(localStorage, PERSON_SESSION_STORAGE_KEY) || '{}')
+    return typeof parsed.person_token === 'string' ? parsed.person_token : null
+  } catch {
+    return null
+  }
+}
+
+function storePersonSession(identity) {
+  const personToken = String(identity?.person_token || '')
+  const personId = String(identity?.matrix_person_id || '')
+  const expiresAt = String(identity?.expires_at || '')
+  if (!personToken || !personId || !expiresAt || Number.isNaN(Date.parse(expiresAt))) return false
+  safeSet(localStorage, PERSON_SESSION_STORAGE_KEY, JSON.stringify({
+    person_token: personToken,
+    person_id: personId,
+    expires_at: expiresAt,
+    linked_at: new Date().toISOString(),
+  }))
+  return true
+}
+
+export function clearMatrixPersonSession() {
+  safeRemove(localStorage, PERSON_SESSION_STORAGE_KEY)
 }
 
 export function hasMatrixConsentDecision() {
@@ -126,7 +173,7 @@ function context() {
     locale: navigator.language || 'pt-BR',
     device_class: deviceClass(),
     platform: String(navigator.userAgentData?.platform || navigator.platform || 'web').slice(0, 80),
-    app_version: 'attualplay-matrix-m3-v1',
+    app_version: 'attualplay-matrix-m4-v1',
   }
 }
 
@@ -162,17 +209,33 @@ function matrixHeaders() {
   }
 }
 
+async function matrixPost(path, payload, { keepalive = false } = {}) {
+  if (!API_URL || !PUBLIC_KEY) return null
+  try {
+    return await fetch(`${API_URL}${path}`, {
+      method: 'POST',
+      headers: matrixHeaders(),
+      body: JSON.stringify(payload),
+      keepalive,
+    })
+  } catch {
+    return null
+  }
+}
+
 export async function trackMatrixEvent(eventType, properties = {}, object = null) {
   if (!readyForAnalytics()) return false
 
   const eventId = newId()
   const sessionId = getSessionId()
+  const personToken = getMatrixPersonToken()
   const payload = {
     event_id: eventId,
     event_type: eventType,
     occurred_at: new Date().toISOString(),
     project_key: 'attualplay',
-    anonymous_id: getAnonymousId(),
+    anonymous_id: getMatrixAnonymousId(),
+    ...(personToken ? { person_token: personToken } : {}),
     session_id: sessionId,
     properties,
     context: context(),
@@ -181,17 +244,9 @@ export async function trackMatrixEvent(eventType, properties = {}, object = null
   }
   if (object?.type && object?.id) payload.object = { type: String(object.type), id: String(object.id) }
 
-  try {
-    const response = await fetch(`${API_URL}/v1/events`, {
-      method: 'POST',
-      headers: matrixHeaders(),
-      body: JSON.stringify(payload),
-      keepalive: true,
-    })
-    return response.ok
-  } catch {
-    return false
-  }
+  const response = await matrixPost('/v1/events', payload, { keepalive: true })
+  if (response?.status === 401 && personToken) clearMatrixPersonSession()
+  return Boolean(response?.ok)
 }
 
 export async function startMatrixSession() {
@@ -221,24 +276,97 @@ export function trackMatrixPreferenceUpdated(preference) {
   })
 }
 
-export async function fetchMatrixRecommendation() {
-  if (!readyForPersonalization()) return null
+async function recommendationRequest(payload) {
+  const response = await matrixPost('/v1/recommendations/query', payload)
+  if (!response?.ok) return null
   try {
-    const response = await fetch(`${API_URL}/v1/recommendations/query`, {
-      method: 'POST',
-      headers: matrixHeaders(),
-      body: JSON.stringify({
-        project_key: 'attualplay',
-        anonymous_id: getAnonymousId(),
-        consent: getMatrixConsent(),
-      }),
-    })
-    if (!response.ok) return null
     const body = await response.json()
     return body?.recommendation || null
   } catch {
     return null
   }
+}
+
+export async function fetchMatrixRecommendation() {
+  if (!readyForPersonalization()) return null
+  const consent = getMatrixConsent()
+  const personToken = getMatrixPersonToken()
+  const anonymousId = getMatrixAnonymousId()
+
+  if (personToken) {
+    const identified = await recommendationRequest({
+      project_key: 'attualplay',
+      person_token: personToken,
+      consent,
+    })
+    if (identified) return identified
+  }
+
+  return recommendationRequest({
+    project_key: 'attualplay',
+    anonymous_id: anonymousId,
+    consent,
+  })
+}
+
+export async function linkMatrixIdentity(bridgeCode) {
+  const consent = getMatrixConsent()
+  if (!readyForPersonalization()) {
+    return { ok: false, error: 'Ative analytics, confirme 18+ e autorize personalização antes de conectar sua conta.' }
+  }
+  const code = String(bridgeCode || '').trim()
+  if (code.length < 12) return { ok: false, error: 'Código de conexão inválido.' }
+
+  const response = await matrixPost('/v1/identity/link', {
+    project_key: 'attualplay',
+    anonymous_id: getMatrixAnonymousId(),
+    bridge_code: code,
+    consent,
+  })
+  if (!response) return { ok: false, error: 'Matrix indisponível no momento.' }
+  let body = null
+  try { body = await response.json() } catch { /* safe fallback below */ }
+  if (!response.ok || !body?.identity || !storePersonSession(body.identity)) {
+    return { ok: false, error: body?.error?.message || 'Código inválido, expirado ou já utilizado.' }
+  }
+  return { ok: true, identity: getMatrixIdentityState(), attual_one_link_status: body.attual_one_link_status || 'linked' }
+}
+
+export async function syncMatrixConsentServer(consentOverride = null) {
+  const personToken = getMatrixPersonToken()
+  if (!personToken) return { ok: true, identified: false }
+  const consent = consentOverride || getMatrixConsent()
+  const response = await matrixPost('/v1/consents', {
+    project_key: 'attualplay',
+    person_token: personToken,
+    consent: {
+      analytics: consent.analytics === true,
+      personalization: consent.analytics === true && consent.personalization === true,
+      adult_confirmed: consent.analytics === true && consent.adult_confirmed === true,
+      marketing: false,
+      policy_version: MATRIX_POLICY_VERSION,
+    },
+  })
+  if (!response) return { ok: false, identified: true }
+  if (response.status === 401) {
+    clearMatrixPersonSession()
+    return { ok: false, identified: false }
+  }
+  return { ok: response.ok, identified: true }
+}
+
+export async function unlinkMatrixIdentity() {
+  const personToken = getMatrixPersonToken()
+  if (!personToken) {
+    clearMatrixPersonSession()
+    return { ok: true, identified: false }
+  }
+  const response = await matrixPost('/v1/identity/unlink', {
+    project_key: 'attualplay',
+    person_token: personToken,
+  })
+  clearMatrixPersonSession()
+  return { ok: Boolean(response?.ok), identified: false }
 }
 
 export function trackMatrixRecommendationShown(recommendationId) {
