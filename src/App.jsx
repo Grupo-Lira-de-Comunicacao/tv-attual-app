@@ -6,6 +6,7 @@ import Contact from './components/Contact.jsx'
 import Schedule from './components/Schedule.jsx'
 import Participation from './components/Participation.jsx'
 import PrivacyConsent from './components/PrivacyConsent.jsx'
+import MatrixForYou from './components/MatrixForYou.jsx'
 import { obterEstadoProgramacao } from './services/programacaoService.js'
 import { trackMatrixPage } from './services/matrixTelemetry.js'
 import './App.css'
@@ -20,6 +21,7 @@ const menuItens = [
 function App() {
   const [abaAtiva, setAbaAtiva] = useState('home')
   const [abaAnterior, setAbaAnterior] = useState('home')
+  const [matrixRefreshKey, setMatrixRefreshKey] = useState(0)
   const { atual, proximo } = obterEstadoProgramacao()
 
   useEffect(() => {
@@ -41,9 +43,27 @@ function App() {
     setAbaAtiva(aba)
   }
 
+  function abrirTopicoMatrix(topicKey) {
+    if (topicKey === 'programacao' || topicKey === 'eventos') {
+      setAbaAtiva('programacao')
+      return
+    }
+    if (topicKey === 'participacao') {
+      abrirParticipacao()
+      return
+    }
+    setAbaAtiva('home')
+    window.setTimeout(() => {
+      if (topicKey === 'radio' || topicKey === 'musica') {
+        document.querySelector('.radio-area')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }, 50)
+  }
+
   return (
     <div className="app">
-      {/* Cabeçalho com logo e lema */}
       <header className="header">
         <div className="logo-area">
           <img
@@ -72,10 +92,8 @@ function App() {
           <Participation onVoltar={() => setAbaAtiva(abaAnterior)} />
         ) : (
           <>
-            {/* Player de TV (modo compacto + modal expandido) */}
             <VideoPlayer />
 
-            {/* Card No Ar Agora — preparado para futura fonte dinâmica */}
             <section className="no-ar">
               <span className="no-ar-badge"><span className="dot" /> NO AR AGORA</span>
               <h2>{atual?.titulo || 'TV Attual'}</h2>
@@ -87,10 +105,10 @@ function App() {
               )}
             </section>
 
-            {/* Botão de rádio */}
             <RadioPlayer />
 
-            {/* Acesso em destaque para as formas de participação */}
+            <MatrixForYou refreshKey={matrixRefreshKey} onSelectTopic={abrirTopicoMatrix} />
+
             <button
               className="botao-participacao-home"
               onClick={abrirParticipacao}
@@ -103,7 +121,6 @@ function App() {
               <span className="botao-participacao-seta" aria-hidden="true">→</span>
             </button>
 
-            {/* Atalho para a página Programação */}
             <button
               className="botao-ver-programacao"
               onClick={() => setAbaAtiva('programacao')}
@@ -111,15 +128,16 @@ function App() {
               Ver programação completa →
             </button>
 
-            {/* Redes sociais */}
             <SocialLinks />
           </>
         )}
       </main>
 
-      <PrivacyConsent onAnalyticsGranted={() => trackMatrixPage(abaAtiva)} />
+      <PrivacyConsent
+        onAnalyticsGranted={() => trackMatrixPage(abaAtiva)}
+        onPersonalizationChanged={() => setMatrixRefreshKey((value) => value + 1)}
+      />
 
-      {/* Menu inferior fixo */}
       <nav className="menu-inferior">
         {menuItens.map((item) => (
           <button
