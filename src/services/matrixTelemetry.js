@@ -3,7 +3,7 @@ const PUBLIC_KEY = String(import.meta.env.VITE_MATRIX_PUBLIC_KEY || '')
 const TRACKING_ENABLED = String(import.meta.env.VITE_MATRIX_TRACKING_ENABLED || '').toLowerCase() === 'true'
 const ANALYTICS_DEFAULT = String(import.meta.env.VITE_MATRIX_ANALYTICS_DEFAULT || '').toLowerCase() === 'granted'
 
-export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v2-2026-09-06'
+export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v3-2026-09-07'
 
 const CONSENT_STORAGE_KEY = 'matrix:consent:v1'
 const ANON_STORAGE_KEY = 'matrix:anonymous-id:v1'
@@ -76,11 +76,12 @@ export function getMatrixConsent() {
     const parsed = JSON.parse(raw)
     if (parsed.policy_version !== MATRIX_POLICY_VERSION) return fallback
     const adultConfirmed = parsed.adult_confirmed === true
+    const analytics = parsed.analytics === true && adultConfirmed
     return {
       ...fallback,
-      analytics: parsed.analytics === true && adultConfirmed,
+      analytics,
+      personalization: analytics && parsed.personalization === true,
       adult_confirmed: adultConfirmed,
-      personalization: false,
       marketing: false,
       policy_version: MATRIX_POLICY_VERSION,
       decided_at: typeof parsed.decided_at === 'string' ? parsed.decided_at : undefined,
@@ -92,10 +93,11 @@ export function getMatrixConsent() {
 
 export function setMatrixConsent(next) {
   const adultConfirmed = next?.adult_confirmed === true
+  const analytics = next?.analytics === true && adultConfirmed
   const value = {
     essential: true,
-    analytics: next?.analytics === true && adultConfirmed,
-    personalization: false,
+    analytics,
+    personalization: analytics && next?.personalization === true,
     marketing: false,
     adult_confirmed: adultConfirmed,
     policy_version: MATRIX_POLICY_VERSION,
@@ -124,7 +126,7 @@ function context() {
     locale: navigator.language || 'pt-BR',
     device_class: deviceClass(),
     platform: String(navigator.userAgentData?.platform || navigator.platform || 'web').slice(0, 80),
-    app_version: 'attualplay-matrix-pilot-v1',
+    app_version: 'attualplay-matrix-m3-v1',
   }
 }
 
@@ -145,6 +147,19 @@ function classifyReferrer() {
 function readyForAnalytics() {
   const consent = getMatrixConsent()
   return TRACKING_ENABLED && hasMatrixConsentDecision() && Boolean(API_URL) && Boolean(PUBLIC_KEY) && consent.analytics === true && consent.adult_confirmed === true
+}
+
+function readyForPersonalization() {
+  const consent = getMatrixConsent()
+  return readyForAnalytics() && consent.personalization === true
+}
+
+function matrixHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Matrix-Client': 'attualplay',
+    'X-Matrix-Key': PUBLIC_KEY,
+  }
 }
 
 export async function trackMatrixEvent(eventType, properties = {}, object = null) {
@@ -169,11 +184,7 @@ export async function trackMatrixEvent(eventType, properties = {}, object = null
   try {
     const response = await fetch(`${API_URL}/v1/events`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Matrix-Client': 'attualplay',
-        'X-Matrix-Key': PUBLIC_KEY,
-      },
+      headers: matrixHeaders(),
       body: JSON.stringify(payload),
       keepalive: true,
     })
@@ -200,6 +211,46 @@ export function trackMatrixPage(page) {
   return trackMatrixEvent('page_viewed', {
     path: normalized === 'home' ? '/' : `/${normalized}`,
     page_type: 'app_tab',
+  })
+}
+
+export function trackMatrixPreferenceUpdated(preference) {
+  return trackMatrixEvent('preference_updated', {
+    topic_key: 'personalization',
+    preference: preference === 'granted' ? 'granted' : 'denied',
+  })
+}
+
+export async function fetchMatrixRecommendation() {
+  if (!readyForPersonalization()) return null
+  try {
+    const response = await fetch(`${API_URL}/v1/recommendations/query`, {
+      method: 'POST',
+      headers: matrixHeaders(),
+      body: JSON.stringify({
+        project_key: 'attualplay',
+        anonymous_id: getAnonymousId(),
+        consent: getMatrixConsent(),
+      }),
+    })
+    if (!response.ok) return null
+    const body = await response.json()
+    return body?.recommendation || null
+  } catch {
+    return null
+  }
+}
+
+export function trackMatrixRecommendationShown(recommendationId) {
+  if (!readyForPersonalization()) return Promise.resolve(false)
+  return trackMatrixEvent('recommendation_shown', { recommendation_id: String(recommendationId) })
+}
+
+export function trackMatrixRecommendationClicked(recommendationId, itemRank) {
+  if (!readyForPersonalization()) return Promise.resolve(false)
+  return trackMatrixEvent('recommendation_clicked', {
+    recommendation_id: String(recommendationId),
+    item_rank: Number(itemRank),
   })
 }
 
