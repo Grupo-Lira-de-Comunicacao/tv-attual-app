@@ -3,7 +3,7 @@ const PUBLIC_KEY = String(import.meta.env.VITE_MATRIX_PUBLIC_KEY || '')
 const TRACKING_ENABLED = String(import.meta.env.VITE_MATRIX_TRACKING_ENABLED || '').toLowerCase() === 'true'
 const ANALYTICS_DEFAULT = String(import.meta.env.VITE_MATRIX_ANALYTICS_DEFAULT || '').toLowerCase() === 'granted'
 
-export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v1-2026-09-06'
+export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v2-2026-09-06'
 
 const CONSENT_STORAGE_KEY = 'matrix:consent:v1'
 const ANON_STORAGE_KEY = 'matrix:anonymous-id:v1'
