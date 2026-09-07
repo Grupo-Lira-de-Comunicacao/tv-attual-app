@@ -121,6 +121,14 @@ export default function PrivacyConsent({ onAnalyticsGranted }) {
               é restrito a usuários que confirmem ter 18 anos ou mais.
             </p>
 
+            <h3>Retenção e descarte</h3>
+            <p>
+              Eventos analíticos brutos e o perfil pseudonimizado associado são mantidos por até 90 dias após a
+              atividade correspondente. Cópias técnicas de eventos em filas de falha também têm limite de 90 dias.
+              Registros técnicos de auditoria da Matrix podem ser mantidos por até 365 dias para segurança,
+              governança e comprovação operacional. A Matrix executa descarte automático periódico desses dados.
+            </p>
+
             <h3>Seus controles</h3>
             <p>
               Você pode aceitar, rejeitar ou revogar o analytics a qualquer momento neste botão de Privacidade.
