@@ -201,6 +201,27 @@ function readyForPersonalization() {
   return readyForAnalytics() && consent.personalization === true
 }
 
+function matrixEventConsent(consent = getMatrixConsent()) {
+  return {
+    essential: true,
+    analytics: consent.analytics === true,
+    personalization: consent.analytics === true && consent.personalization === true,
+    marketing: false,
+    adult_confirmed: consent.analytics === true && consent.adult_confirmed === true,
+    policy_version: MATRIX_POLICY_VERSION,
+  }
+}
+
+function matrixM4Consent(consent = getMatrixConsent()) {
+  return {
+    analytics: consent.analytics === true,
+    personalization: consent.analytics === true && consent.personalization === true,
+    adult_confirmed: consent.analytics === true && consent.adult_confirmed === true,
+    marketing: false,
+    policy_version: MATRIX_POLICY_VERSION,
+  }
+}
+
 function matrixHeaders() {
   return {
     'Content-Type': 'application/json',
@@ -239,7 +260,7 @@ export async function trackMatrixEvent(eventType, properties = {}, object = null
     session_id: sessionId,
     properties,
     context: context(),
-    consent: getMatrixConsent(),
+    consent: matrixEventConsent(),
     idempotency_key: `attualplay:${sessionId}:${eventType}:${eventId}`,
   }
   if (object?.type && object?.id) payload.object = { type: String(object.type), id: String(object.id) }
@@ -289,7 +310,7 @@ async function recommendationRequest(payload) {
 
 export async function fetchMatrixRecommendation() {
   if (!readyForPersonalization()) return null
-  const consent = getMatrixConsent()
+  const consent = matrixM4Consent()
   const personToken = getMatrixPersonToken()
   const anonymousId = getMatrixAnonymousId()
 
@@ -321,7 +342,7 @@ export async function linkMatrixIdentity(bridgeCode) {
     project_key: 'attualplay',
     anonymous_id: getMatrixAnonymousId(),
     bridge_code: code,
-    consent,
+    consent: matrixM4Consent(consent),
   })
   if (!response) return { ok: false, error: 'Matrix indisponível no momento.' }
   let body = null
@@ -339,13 +360,7 @@ export async function syncMatrixConsentServer(consentOverride = null) {
   const response = await matrixPost('/v1/consents', {
     project_key: 'attualplay',
     person_token: personToken,
-    consent: {
-      analytics: consent.analytics === true,
-      personalization: consent.analytics === true && consent.personalization === true,
-      adult_confirmed: consent.analytics === true && consent.adult_confirmed === true,
-      marketing: false,
-      policy_version: MATRIX_POLICY_VERSION,
-    },
+    consent: matrixM4Consent(consent),
   })
   if (!response) return { ok: false, identified: true }
   if (response.status === 401) {
