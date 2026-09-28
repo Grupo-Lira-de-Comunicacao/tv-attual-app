@@ -15,8 +15,8 @@ export const LINKS = {
   // Painel de administração da TV: https://tv.tvattual.com.br/
   // Playlist completa de canais:  https://tv.tvattual.com.br/iptv/channels.m3u
 
-  RADIO_EMBED_URL: "https://radio.tvattual.com.br/public/r%C3%A1dio_attual/embed",
-  RADIO_STREAM_URL: "https://radio.tvattual.com.br/listen/r%C3%A1dio_attual/radio.mp3",
+  RADIO_EMBED_URL: "https://radio.tvattual.com.br/public/radio_attual/embed",
+  RADIO_STREAM_URL: "https://radio.tvattual.com.br/listen/radio_attual/radio.mp3",
 
   TIKTOK_URL: "https://www.tiktok.com/@attualplayoficial",
   INSTAGRAM_URL: "https://www.instagram.com/attualplay",
