@@ -22,9 +22,20 @@
   let hadPlayback = false;
   let userPaused = false;
 
+  // Only non-sensitive UI events are sent to the embedding official website/app.
+  function report(type, detail) {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type, ...detail }, '*');
+    }
+  }
+
+  video.addEventListener('playing', () => report('tvattual:playback', { state: 'playing' }));
+  video.addEventListener('pause', () => report('tvattual:playback', { state: 'paused' }));
+
   function showMode(next) {
     const isLive = next === 'live';
     signal.textContent = isLive ? 'AO VIVO' : 'PROGRAMAÇÃO 24H';
+    report('tvattual:source', { mode: next });
     signal.classList.toggle('online', isLive);
     signal.classList.toggle('offline', !isLive);
     notice.textContent = isLive
