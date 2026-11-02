@@ -3,12 +3,16 @@
 set -Eeuo pipefail
 umask 077
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-INFRA="$ROOT/streaming-mvp/infra"
-cd "$ROOT"
-test ! -e "$INFRA/secrets"
-test ! -e "$INFRA/ci-override.yml"
-command -v ffmpeg >/dev/null
-command -v docker >/dev/null
+echo "CI_E2E_PRECHECK"
+TMPROOT="$(mktemp -d)"
+cp -a "$ROOT/streaming-mvp" "$TMPROOT/streaming-mvp"
+INFRA="$TMPROOT/streaming-mvp/infra"
+cd "$TMPROOT"
+if ! command -v ffmpeg >/dev/null; then echo "FFMPEG_NOT_INSTALLED"; exit 9; fi
+if ! command -v docker >/dev/null; then echo "DOCKER_NOT_INSTALLED"; exit 10; fi
+if test -e "$INFRA/secrets"; then echo "SECRETS_DIR_ALREADY_EXISTS"; exit 11; fi
+if test -e "$INFRA/ci-override.yml"; then echo "CI_OVERRIDE_ALREADY_EXISTS"; exit 12; fi
+
 mkdir -p "$INFRA/secrets/certs"
 openssl req -x509 -nodes -newkey rsa:2048 -days 1 -keyout "$INFRA/secrets/certs/privkey.pem" -out "$INFRA/secrets/certs/fullchain.pem" -subj '/CN=ingest.tvattual.com.br' -addext 'subjectAltName=DNS:ingest.tvattual.com.br,DNS:live.tvattual.com.br' >/dev/null 2>&1
 export TVATTUAL_PUBLISH_PASSWORD="$(openssl rand -hex 32)"
