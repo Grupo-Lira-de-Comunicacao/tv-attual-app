@@ -23,6 +23,7 @@ jobs:
           bash -n streaming-mvp/infra/stage-on-host-agent.sh
           python -m py_compile streaming-mvp/infra/prepare_config.py streaming-mvp/services/status.py
           node --check streaming-mvp/web/app.js
+          node streaming-mvp/tests/test_switch.cjs
           docker compose -f streaming-mvp/infra/docker-compose.yml config --quiet
       - name: Build AttualPlay with unified channel
         run: |
