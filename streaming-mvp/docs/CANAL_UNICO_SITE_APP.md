@@ -35,7 +35,8 @@ A página `https://tvattual.com.br/tv-attual-ao-vivo/` já utiliza o player cent
 `src/components/VideoPlayer.jsx` passa a incorporar a mesma URL `?embed=1`; `src/config/links.js` adiciona `TV_UNIFIED_PLAYER_URL`, mantendo a URL antiga do ErsatzTV como alternativa preservada.
 `postMessage` de modo e reprodução permite atualizar o badge e manter telemetria anônima consentida.
 No app o cabeçalho deixa de dizer “AO VIVO” enquanto está apenas reproduzindo programas gravados.
-**Não promover branch ao aplicativo público sem teste do PWA e deploy aprovado.**
+**Segurança do iframe liberada em 02/11/2026:** a política `Content-Security-Policy: frame-ancestors` do player agora permite **somente** `https://tvattual.com.br`, `https://www.tvattual.com.br`, `https://app.tvattual.com.br` e `self`. O ajuste está aplicado na VPS, validado em `nginx -t` e `curl`, com backup do nginx.conf em `streaming-mvp/infra/nginx.conf.before-official-app-frame-20261102`. O código correspondente está versionado em `infra/nginx.conf`.
+**Não promover branch ao aplicativo público sem teste do PWA e deploy aprovado.** A Vercel apresenta preview READY com commit 49c83ed..., mas a produção em `app.tvattual.com.br` permanece no commit `a5db1f09...` em `main`. O CI geral falha por duas dependências vulneráveis do build (`vite@8.1.3` e `source-map-js@1.2.1`), e a PR deve permanecer draft até correção de segurança e validação.
 
 ## Qualidade e salvaguardas
 
@@ -48,4 +49,4 @@ No app o cabeçalho deixa de dizer “AO VIVO” enquanto está apenas reproduzi
 
 ## Estado (02/11/2026)
 
-Código e templates **versionados na PR #14**, ainda em revisão. Player unificado **não implantado em produção**. N4_ROOT requer autorização específica antes da instalação na VPS. O antigo player continua operando normalmente.
+Código e templates **versionados na PR #14**, ainda em revisão. Player unificado **implantado na VPS** e **na home do WordPress**. CORS do ErsatzTV, playlist principal, playlist secundária e segmento HLS foram validados com HTTP 200. O **aplicativo público ainda não foi promovido** da branch em preview, para evitar ultrapassar o escopo aprovado e contornar a auditoria npm reprovada. O canal antigo continua funcionando.
