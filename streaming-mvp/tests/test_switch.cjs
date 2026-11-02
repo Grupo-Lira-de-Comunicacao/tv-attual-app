@@ -61,6 +61,7 @@ const vm = require('node:vm');
     location: { search: '' },
     fetch: async () => ({ ok: true, json: async () => ({ live }) }),
     AbortController,
+    URLSearchParams,
     setTimeout,
     clearTimeout,
     setInterval(fn) { poll = fn; return 1; },
