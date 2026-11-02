@@ -1,19 +1,31 @@
 # Arquitetura técnica — TV Attual Streaming v0.1
 
-Objetivo: streaming próprio ao vivo no início, sem YouTube, sem CDN paga, sem grade 24h obrigatória. Fluxo OBS/ATEM -> RTMPS 1936 com TLS e usuário/senha -> MediaMTX -> HLS interno -> proxy Nginx -> Nginx Proxy Manager HTTPS -> live.tvattual.com.br -> player iframe no site.
+OBJETIVO: streaming próprio ao vivo, sem YouTube e sem CDN paga. Fluxo: OBS ou aplicativo móvel RTMPS (TCP 1936 com TLS e senha) -> MediaMTX -> HLS interno -> Nginx web interno -> Nginx Proxy Manager HTTPS -> live.tvattual.com.br -> player próprio.
 
-A VPS 2 já abriga ErsatzTV, File Browser, AzuraCast e ATLAS; nada disso é alterado. O aplicativo AttualPlay já consome tv.tvattual.com.br/iptv/channel/1.m3u8 e essa URL não deve ser substituída.
+A VPS 2 já abriga ErsatzTV, File Browser, AzuraCast e ATLAS. Não alterar esses serviços ou seus domínios. O AttualPlay atual consome `tv.tvattual.com.br/iptv/channel/1.m3u8`; preservar a URL e a grade já existente.
+
+## Decisão de diretório — Host Agent
+
+- `/opt/tvattual-live`: **NÃO USAR** (não está nos ReadWritePaths do Host Agent).
+- `/var/lib/atlas-host-agent/tvattual-live`: caminho **previsto e permitido** pelo unit file do Host Agent (confirmar permissões reais no runtime).
+- Motivo: unit `host-agent/atlas-host-agent.service` usa `ProtectSystem=strict` e `ReadWritePaths=/opt/atlas-dev-flow /var/lib/atlas-host-agent /var/log/atlas-host-agent /run/docker.sock`.
+- Precedente: projeto A1 em 03/10/2026 gravou com sucesso `/var/lib/atlas-host-agent/a1-deploy`.
+- O script `infra/stage-on-host-agent.sh` utiliza exclusivamente o caminho autorizado e aborta se ele não for gravável ou se já existir, preservando dados.
+- **Não** corrigir alterando/removendo segurança systemd; **não** usar Docker como contorno de permissões.
 
 ## Dependências de produção
-1. Registros DNS A novos para live.tvattual.com.br e ingest.tvattual.com.br apontados a 179.198.124.163 (confirmar novamente).
-2. Certificado público válido para os novos hosts, com renovação automatizada e chave protegida.
-3. Pasta isolada e criada por mecanismo autorizado; Host Agent apresentado como somente leitura na auditoria N4_ROOT de 01/11/2026.
-4. Network Docker nova tvattual-live-proxy; apenas ligação aditiva com Nginx Proxy Manager, sem reiniciar ou alterar hosts existentes.
-5. Porta 1936/TCP para RTMPS autenticado; nenhum painel administrativo do MediaMTX exposto.
-6. Status /status.json deve indicar false sem OBS; true quando manifest HLS está disponível.
-7. Teste não listado com OBS 720p/30, x264 superfast, CBR 3000 kbps, keyframes 2s, áudio AAC 128 kbps.
-8. Testar Android, iOS e desktop; perda de sinal, consumo de CPU, upload, atraso, recuperação e capacidade de público.
-9. Página nova reversível no WordPress depois do streaming validado.
 
-## Limites e segurança
-Sem exclusões de dados/volumes/containers/logs/backups. Não usar docker prune, rm -rf, down -v, substituir roteamento ou atualizar serviços existentes. Código sem credenciais no Git. Sem gravar automaticamente vídeos. Arquivos de mídia e chaves TLS fora do repositório. Validar compatibilidade das imagens e da configuração MediaMTX antes de habilitar a porta 1936.
+1. Preparar novo Objective Scope N4_ROOT válido, com uma única aprovação para a cadeia de ações permitidas. O escopo anterior expirou; não reutilizar autorizações vencidas.
+2. Checar existência e permissão de escrita na raiz `/var/lib/atlas-host-agent`; em seguida executar staging isolado com SHA do GitHub confirmado.
+3. DNS A de `live.tvattual.com.br` e `ingest.tvattual.com.br` para VPS 2 (endereço observado anteriormente: 179.198.124.163; verificar novamente).
+4. Certificado confiável para os novos hosts, renovação automática e chaves protegidas; não expor credenciais.
+5. Rede Docker nova, conexão aditiva ao NPM existente, sem reiniciar ou alterar hosts atuais.
+6. Porta TCP 1936 apenas para ingest RTMPS autenticado; não publicar portas administrativas.
+7. Status `/status.json` deve indicar false sem OBS e true durante publicação HLS.
+8. Testar sinal OBS 720p/30 FPS, vídeo 3000 kbps, keyframes 2s, AAC 128 kbps. Testar Larix/PRISM em sessão separada, sem sobrescrever transmissão do estúdio.
+9. Testar Android/iOS/desktop, falha de upload, perda de sinal, métricas e consumo.
+10. Criar página WordPress nova somente após streaming validado.
+
+## Proibições
+
+Sem exclusões, sem `docker prune`, sem `rm -rf`, sem `docker compose down -v`, sem reinícios/alterações de serviços alheios. Nenhum segredo no Git. Sem gravação automática. Implantação só após homologação completa.
