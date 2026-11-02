@@ -20,6 +20,22 @@ class TestPackage(unittest.TestCase):
         for tag in ('lang="pt-BR"', 'id="video"', 'id="start"', 'id="signal"'):
             self.assertIn(tag, html)
         self.assertNotIn("youtube.com", html)
+    def test_24h_unified_player(self):
+        player = (ROOT / "web/app.js").read_text()
+        for required in (
+            "https://tv.tvattual.com.br/iptv/channel/1.m3u8",
+            "'/hls/tvattual-live/index.m3u8'",
+            "fetch('/status.json'",
+            "switchTo('recorded')",
+            "switchTo('live')",
+            "tvattual:source",
+        ):
+            self.assertIn(required, player)
+        home = (ROOT / "integrations/wordpress-home-html-widget.html").read_text()
+        self.assertIn('class="attual-live-player"', home)
+        self.assertIn('src="https://live.tvattual.com.br/?embed=1"', home)
+        self.assertNotIn("hls.js@latest", home)
+
     def test_status_gateway(self):
         text = (ROOT / "services/status.py").read_text()
         self.assertIn("urlopen", text)
