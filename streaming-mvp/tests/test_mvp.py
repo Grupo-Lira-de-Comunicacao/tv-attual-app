@@ -36,6 +36,16 @@ class TestPackage(unittest.TestCase):
         self.assertIn('src="https://live.tvattual.com.br/?embed=1"', home)
         self.assertNotIn("hls.js@latest", home)
 
+    def test_frame_ancestors_for_official_site_and_app(self):
+        config = (ROOT / "infra/nginx.conf").read_text()
+        expected = (
+            "frame-ancestors 'self' https://tvattual.com.br "
+            "https://www.tvattual.com.br https://app.tvattual.com.br"
+        )
+        self.assertIn(expected, config)
+        self.assertNotIn("frame-ancestors *", config)
+        self.assertNotIn("frame-ancestors 'none'", config)
+
     def test_status_gateway(self):
         text = (ROOT / "services/status.py").read_text()
         self.assertIn("urlopen", text)
