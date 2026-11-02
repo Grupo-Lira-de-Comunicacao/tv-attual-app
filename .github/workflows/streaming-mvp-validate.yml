@@ -23,6 +23,10 @@ jobs:
           bash -n streaming-mvp/infra/stage-on-host-agent.sh
           python -m py_compile streaming-mvp/infra/prepare_config.py streaming-mvp/services/status.py
           docker compose -f streaming-mvp/infra/docker-compose.yml config --quiet
+      - name: Install FFmpeg for isolated media verification
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
       - name: RTMPS to HLS end-to-end (ephemeral CI only)
         run: |
           bash streaming-mvp/tests/e2e-ci.sh
