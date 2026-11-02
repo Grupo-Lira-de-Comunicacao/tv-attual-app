@@ -13,3 +13,11 @@ h1{font-size:clamp(24px,5vw,54px);margin:0}.standby p{font-size:clamp(13px,1.8vw
 button{font:inherit;border:1px solid #527ba8;border-radius:9px;cursor:pointer;background:#114476;color:#fff;padding:12px 18px;font-weight:650}button:hover,button:focus-visible{outline:2px solid #f8ac6d;outline-offset:2px}
 .footer{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 4px;color:#d2dbeb;font-size:14px}.footer button{background:transparent;padding:8px 12px}
 @media(max-width:520px){.player-top{inset:8px}.signal,.station{font-size:9px;padding:5px 7px}.standby{padding:45px 10px 10px}.standby p{margin:5px}.brand{font-size:23px}.subbrand{font-size:9px}}
+
+/* One shared player embedded by the official website and AttualPlay app. */
+.attual-embed body { background:#000; }
+.attual-embed .container { max-width:none; width:100%; padding:0; }
+.attual-embed .masthead, .attual-embed .footer { display:none; }
+.attual-embed .player { border:0; border-radius:0; box-shadow:none; }
+.attual-embed .player-top { inset:10px 12px auto; }
+.attual-embed .standby { background:#061327; }
