@@ -47,7 +47,10 @@ echo 'Checking correct public HTTPS redirect'
 curl -sS --max-time 5 -D "$INFRA/secrets/ci-headers.txt" -o /dev/null 'http://127.0.0.1:18080/hls/tvattual-live/index.m3u8'
 grep -q -i '^location: https://live.tvattual.com.br/hls/tvattual-live/index.m3u8?cookieCheck=1' "$INFRA/secrets/ci-headers.txt"
 echo 'Checking HLS manifest behind reverse proxy with cookie check'
-curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' 'http://127.0.0.1:18080/hls/tvattual-live/index.m3u8?cookieCheck=1' -o "$INFRA/secrets/ci-playlist.m3u8"
+curl -fsS --max-time 8 -D "$INFRA/secrets/ci-master-headers.txt" -H 'Cookie: cookieCheck=1' 'http://127.0.0.1:18080/hls/tvattual-live/index.m3u8?cookieCheck=1' -o "$INFRA/secrets/ci-playlist.m3u8"
+SESSION_COOKIE="$(sed -n 's/^[Ss]et-[Cc]ookie: \(hlsSession=[^;]*\).*/\1/p' "$INFRA/secrets/ci-master-headers.txt" | head -n 1 | tr -d '\r')"
+test -n "$SESSION_COOKIE" || { echo 'HLS_SESSION_COOKIE_NOT_SET'; exit 25; }
+echo 'HLS_SESSION_COOKIE_RECEIVED'
 head -n 1 "$INFRA/secrets/ci-playlist.m3u8" | grep -q '#EXTM3U'
 echo 'HLS_MANIFEST_VALID'
 echo 'Checking HLS media playlist and segment over the reverse proxy'
@@ -58,7 +61,7 @@ if ! grep -q '^#EXTINF:' "$MEDIA_PLAYLIST"; then
   case "$CHILD" in
     ''|/*|*'..'*|*'://'*) echo 'INVALID_CHILD_REFERENCE'; exit 20 ;;
   esac
-  curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' "http://127.0.0.1:18080/hls/tvattual-live/$CHILD" -o "$INFRA/secrets/ci-child.m3u8"
+  curl -fsS --max-time 8 -H "Cookie: $SESSION_COOKIE" "http://127.0.0.1:18080/hls/tvattual-live/$CHILD" -o "$INFRA/secrets/ci-child.m3u8"
   MEDIA_PLAYLIST="$INFRA/secrets/ci-child.m3u8"
 fi
 grep -q '^#EXTINF:' "$MEDIA_PLAYLIST" || { echo 'NO_MEDIA_SEGMENTS_LISTED'; exit 21; }
@@ -66,7 +69,7 @@ SEGMENT="$(awk '/^#EXTINF:/ {ready=1; next} ready && $0 !~ /^#/ && NF {print; ex
 case "$SEGMENT" in
   ''|/*|*'..'*|*'://'*) echo 'INVALID_SEGMENT_REFERENCE'; exit 22 ;;
 esac
-curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' "http://127.0.0.1:18080/hls/tvattual-live/$SEGMENT" -o "$INFRA/secrets/ci-segment.ts"
+curl -fsS --max-time 8 -H "Cookie: $SESSION_COOKIE" "http://127.0.0.1:18080/hls/tvattual-live/$SEGMENT" -o "$INFRA/secrets/ci-segment.ts"
 test "$(wc -c < "$INFRA/secrets/ci-segment.ts")" -gt 200
 echo 'HLS_SEGMENT_FETCH_VALID'
 wait "$PID"
