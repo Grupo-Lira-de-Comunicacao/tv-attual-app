@@ -29,7 +29,13 @@ for i in $(seq 1 30); do
   if curl -fsS --max-time 2 http://127.0.0.1:18080/health >/dev/null 2>&1; then break; fi
   sleep 1
 done
-curl -fsS http://127.0.0.1:18080/status.json | grep -q '"live":false'
+echo "Waiting for status backend readiness"
+READY=0
+for i in $(seq 1 35); do
+  if curl -fsS --max-time 3 http://127.0.0.1:18080/status.json 2>/dev/null | grep -q '"live":false'; then READY=1; break; fi
+  sleep 1
+done
+if test "$READY" -ne 1; then echo "STATUS_BACKEND_NOT_READY"; docker ps --filter name=tvattual-live --format "{{.Names}} {{.Status}}"; exit 13; fi
 URL="rtmps://127.0.0.1:1936/tvattual-live?user=tvattual-publisher&pass=$TVATTUAL_PUBLISH_PASSWORD"
 ffmpeg -nostdin -hide_banner -nostats -loglevel error -re -f lavfi -i 'testsrc2=size=320x180:rate=10' -re -f lavfi -i 'sine=frequency=440:sample_rate=44100' -t 22 -shortest -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -b:v 450k -g 20 -c:a aac -b:a 64k -f flv "$URL" > "$INFRA/secrets/ci-publisher.log" 2>&1 &
 PID=$!
