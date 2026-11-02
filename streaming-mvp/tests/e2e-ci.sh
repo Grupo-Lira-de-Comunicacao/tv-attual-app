@@ -50,11 +50,21 @@ echo 'Checking HLS manifest behind reverse proxy with cookie check'
 curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' 'http://127.0.0.1:18080/hls/tvattual-live/index.m3u8?cookieCheck=1' -o "$INFRA/secrets/ci-playlist.m3u8"
 head -n 1 "$INFRA/secrets/ci-playlist.m3u8" | grep -q '#EXTM3U'
 echo 'HLS_MANIFEST_VALID'
-echo 'Checking at least one media segment over the HLS reverse proxy'
-grep -q '^#EXTINF:' "$INFRA/secrets/ci-playlist.m3u8"
-SEGMENT="$(awk '/^#EXTINF:/ {ready=1; next} ready && $0 !~ /^#/ && NF {print; exit}' "$INFRA/secrets/ci-playlist.m3u8")"
+echo 'Checking HLS media playlist and segment over the reverse proxy'
+MEDIA_PLAYLIST="$INFRA/secrets/ci-playlist.m3u8"
+if ! grep -q '^#EXTINF:' "$MEDIA_PLAYLIST"; then
+  echo 'Master playlist received; following child playlist'
+  CHILD="$(awk '/^#EXT-X-STREAM-INF:/ {ready=1; next} ready && $0 !~ /^#/ && NF {print; exit}' "$MEDIA_PLAYLIST")"
+  case "$CHILD" in
+    ''|/*|*'..'*|*'://'*) echo 'INVALID_CHILD_REFERENCE'; exit 20 ;;
+  esac
+  curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' "http://127.0.0.1:18080/hls/tvattual-live/$CHILD" -o "$INFRA/secrets/ci-child.m3u8"
+  MEDIA_PLAYLIST="$INFRA/secrets/ci-child.m3u8"
+fi
+grep -q '^#EXTINF:' "$MEDIA_PLAYLIST" || { echo 'NO_MEDIA_SEGMENTS_LISTED'; exit 21; }
+SEGMENT="$(awk '/^#EXTINF:/ {ready=1; next} ready && $0 !~ /^#/ && NF {print; exit}' "$MEDIA_PLAYLIST")"
 case "$SEGMENT" in
-  ''|/*|*'..'*|*'://'*) echo 'INVALID_SEGMENT_REFERENCE'; exit 20 ;;
+  ''|/*|*'..'*|*'://'*) echo 'INVALID_SEGMENT_REFERENCE'; exit 22 ;;
 esac
 curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' "http://127.0.0.1:18080/hls/tvattual-live/$SEGMENT" -o "$INFRA/secrets/ci-segment.ts"
 test "$(wc -c < "$INFRA/secrets/ci-segment.ts")" -gt 200
