@@ -1,0 +1,42 @@
+logLevel: info
+logDestinations: [stdout]
+api: false
+metrics: false
+pprof: false
+playback: false
+rtsp: false
+webrtc: false
+srt: false
+moq: false
+rtmp: true
+rtmpEncryption: strict
+rtmpsAddress: :1936
+rtmpServerKey: /certs/privkey.pem
+rtmpServerCert: /certs/fullchain.pem
+hls: true
+hlsAddress: :8888
+hlsEncryption: false
+hlsVariant: mpegts
+hlsSegmentCount: 5
+hlsSegmentDuration: 2s
+hlsAlwaysRemux: true
+hlsAllowOrigins: ["https://live.tvattual.com.br", "https://tvattual.com.br", "https://www.tvattual.com.br"]
+authMethod: internal
+authInternalUsers:
+  - user: tvattual-publisher
+    pass: sha256:__PASSWORD_SHA256_BASE64__
+    ips: []
+    permissions:
+      - action: publish
+        path: tvattual-live
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: read
+        path: tvattual-live
+paths:
+  tvattual-live:
+    source: publisher
+    overridePublisher: false
+    record: false
