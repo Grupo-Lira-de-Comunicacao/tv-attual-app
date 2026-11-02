@@ -50,6 +50,15 @@ echo 'Checking HLS manifest behind reverse proxy with cookie check'
 curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' 'http://127.0.0.1:18080/hls/tvattual-live/index.m3u8?cookieCheck=1' -o "$INFRA/secrets/ci-playlist.m3u8"
 head -n 1 "$INFRA/secrets/ci-playlist.m3u8" | grep -q '#EXTM3U'
 echo 'HLS_MANIFEST_VALID'
+echo 'Checking at least one media segment over the HLS reverse proxy'
+grep -q '^#EXTINF:' "$INFRA/secrets/ci-playlist.m3u8"
+SEGMENT="$(awk '/^#EXTINF:/ {ready=1; next} ready && $0 !~ /^#/ && NF {print; exit}' "$INFRA/secrets/ci-playlist.m3u8")"
+case "$SEGMENT" in
+  ''|/*|*'..'*|*'://'*) echo 'INVALID_SEGMENT_REFERENCE'; exit 20 ;;
+esac
+curl -fsS --max-time 8 -H 'Cookie: cookieCheck=1' "http://127.0.0.1:18080/hls/tvattual-live/$SEGMENT" -o "$INFRA/secrets/ci-segment.ts"
+test "$(wc -c < "$INFRA/secrets/ci-segment.ts")" -gt 200
+echo 'HLS_SEGMENT_FETCH_VALID'
 wait "$PID"
 sleep 3
 curl -fsS http://127.0.0.1:18080/status.json | grep -q '"live":false'
