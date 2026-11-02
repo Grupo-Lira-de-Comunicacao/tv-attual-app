@@ -1,0 +1,52 @@
+name: tvattual-live
+services:
+  origin:
+    image: bluenviron/mediamtx:1.21.3
+    restart: unless-stopped
+    command: ["/etc/mediamtx/mediamtx.yml"]
+    ports:
+      - "1936:1936/tcp"
+    volumes:
+      - ./secrets/mediamtx.yml:/etc/mediamtx/mediamtx.yml:ro
+      - ./secrets/certs:/certs:ro
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    networks: [media]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  status:
+    image: python:3.12-alpine
+    restart: unless-stopped
+    command: ["python", "-B", "/app/status.py"]
+    environment:
+      MEDIAMTX_HLS_URL: http://origin:8888/tvattual-live/index.m3u8
+    volumes:
+      - ../services/status.py:/app/status.py:ro
+    user: "65534:65534"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    networks: [media]
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on: [origin, status]
+    volumes:
+      - ../web:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    read_only: true
+    tmpfs: [/var/cache/nginx, /var/run, /tmp]
+    security_opt:
+      - no-new-privileges:true
+    networks: [media, proxy]
+networks:
+  media:
+    driver: bridge
+  proxy:
+    external: true
+    name: tvattual-live-proxy
