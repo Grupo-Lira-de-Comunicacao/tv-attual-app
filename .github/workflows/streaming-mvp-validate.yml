@@ -22,7 +22,12 @@ jobs:
           python -m unittest discover -s streaming-mvp/tests -p 'test*.py' -v
           bash -n streaming-mvp/infra/stage-on-host-agent.sh
           python -m py_compile streaming-mvp/infra/prepare_config.py streaming-mvp/services/status.py
+          node --check streaming-mvp/web/app.js
           docker compose -f streaming-mvp/infra/docker-compose.yml config --quiet
+      - name: Build AttualPlay with unified channel
+        run: |
+          npm ci --ignore-scripts
+          npm run build
       - name: Install FFmpeg for isolated media verification
         run: |
           sudo apt-get update -qq
