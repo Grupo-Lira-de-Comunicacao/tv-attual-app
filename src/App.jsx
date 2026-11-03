@@ -79,7 +79,7 @@ function App() {
           </div>
         </div>
         <span className="badge-ao-vivo">
-          <span className="dot" /> AO VIVO
+          <span className="dot" /> TV 24H
         </span>
       </header>
 
