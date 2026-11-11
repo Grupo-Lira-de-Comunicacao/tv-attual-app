@@ -79,7 +79,7 @@ function App() {
         </div>
         <span className="badge-ao-vivo" aria-live="polite">
           {modoTv === 'live' && <span className="dot" />}
-          {modoTv === 'live' ? 'AO VIVO' : modoTv === 'recorded' ? 'TV 24 HORAS' : 'CANAL TV ATTUAL'}
+          {modoTv === 'unknown' ? 'CANAL TV ATTUAL' : 'NO AR'}
         </span>
       </header>
 
@@ -96,12 +96,12 @@ function App() {
 
             <section className="no-ar" aria-live="polite">
               <span className="no-ar-badge">
-                {modoTv === 'live' ? 'TRANSMISSÃO AO VIVO' : modoTv === 'recorded' ? 'PROGRAMAÇÃO 24 HORAS' : 'CANAL TV ATTUAL'}
+                {modoTv === 'live' ? 'TRANSMISSÃO DIRETA' : modoTv === 'recorded' ? 'PROGRAMAÇÃO GRAVADA' : 'CANAL TV ATTUAL'}
               </span>
-              <h2>{modoTv === 'live' ? 'TV Attual — ao vivo' : 'TV Attual — canal oficial'}</h2>
+              <h2>{modoTv === 'live' ? 'TV Attual — transmissão direta' : 'TV Attual — canal oficial'}</h2>
               <p>
                 {modoTv === 'live'
-                  ? 'Acompanhe a transmissão ao vivo da TV Attual.'
+                  ? 'Acompanhe a transmissão direta da TV Attual.'
                   : 'Assista à programação contínua. Os horários detalhados só serão mostrados quando vierem de uma fonte oficial atualizada.'}
               </p>
             </section>
