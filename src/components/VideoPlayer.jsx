@@ -1,45 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
-import Hls from 'hls.js'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { LINKS } from '../config/links.js'
 import { matrixDurationBucket, trackMatrixEvent } from '../services/matrixTelemetry.js'
 import './VideoPlayer.css'
 
-/*
-  Player ao vivo da TV Attual — stream HLS direto (TV_STREAM_URL).
-  - Chrome/Edge/Firefox/Android: hls.js (Hls.isSupported())
-  - Safari/iOS: HLS nativo (video.src direto)
-  - Sem autoplay: o usuário clica em "Assistir agora" (video.play()).
-  - A tag <video> é real, com controls nativos — nunca só uma div preta.
-*/
-function StreamPlayer() {
-  const videoRef = useRef(null)
+// TV Attual has one canonical player for app and website.
+// It switches to MediaMTX live when available, otherwise ErsatzTV 24h.
+function StreamPlayer({ onSourceChange }) {
+  const iframeRef = useRef(null)
   const watchStartedAtRef = useRef(null)
-  const [tocando, setTocando] = useState(false)
-  const [aviso, setAviso] = useState('')
 
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return undefined
-
-    let hls = null
-
-    if (Hls.isSupported()) {
-      hls = new Hls()
-      hls.loadSource(LINKS.TV_STREAM_URL)
-      hls.attachMedia(video)
-      hls.on(Hls.Events.ERROR, (_evento, dados) => {
-        if (dados.fatal) {
-          setAviso('Não foi possível carregar a transmissão agora.')
-        }
-      })
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // HLS nativo (Safari, iOS)
-      video.src = LINKS.TV_STREAM_URL
-    } else {
-      setAviso('Não foi possível carregar a transmissão agora.')
-    }
-
-    const registrarParada = () => {
+    const stop = () => {
       if (!watchStartedAtRef.current) return
       const seconds = (Date.now() - watchStartedAtRef.current) / 1000
       watchStartedAtRef.current = null
@@ -48,149 +19,117 @@ function StreamPlayer() {
         watch_seconds_bucket: matrixDurationBucket(seconds),
       })
     }
-
-    const aoTocar = () => {
-      setTocando(true)
-      setAviso('')
-      if (!watchStartedAtRef.current) {
-        watchStartedAtRef.current = Date.now()
-        void trackMatrixEvent('tv_started', { channel_key: 'tv-attual-live' })
+    const onMessage = (event) => {
+      if (event.origin !== 'https://live.tvattual.com.br') return
+      if (event.source !== iframeRef.current?.contentWindow) return
+      const msg = event.data
+      if (!msg || typeof msg !== 'object') return
+      if (msg.type === 'tvattual:source' && ['live', 'recorded'].includes(msg.mode)) {
+        onSourceChange(msg.mode)
+      }
+      if (msg.type === 'tvattual:playback') {
+        if (msg.state === 'playing' && !watchStartedAtRef.current) {
+          window.dispatchEvent(new Event('attualplay:tv-playing'))
+          watchStartedAtRef.current = Date.now()
+          void trackMatrixEvent('tv_started', { channel_key: 'tv-attual-live' })
+        } else if (msg.state === 'paused') {
+          stop()
+        }
       }
     }
-    const aoPausar = () => {
-      setTocando(false)
-      registrarParada()
-    }
-
-    video.addEventListener('playing', aoTocar)
-    video.addEventListener('pause', aoPausar)
-    video.addEventListener('ended', aoPausar)
-
+    window.addEventListener('message', onMessage)
     return () => {
-      registrarParada()
-      video.removeEventListener('playing', aoTocar)
-      video.removeEventListener('pause', aoPausar)
-      video.removeEventListener('ended', aoPausar)
-      if (hls) hls.destroy()
+      window.removeEventListener('message', onMessage)
+      stop()
     }
-  }, [])
-
-  function assistir() {
-    const video = videoRef.current
-    if (!video) return
-    video
-      .play()
-      .catch(() => setAviso('Toque no player para iniciar a transmissão.'))
-  }
+  }, [onSourceChange])
 
   return (
-    <>
-      <video
-        ref={videoRef}
-        className="stream-video"
-        controls
-        playsInline
-        preload="metadata"
-      />
-
-      {/* Overlay central — não bloqueia os controles nativos do vídeo */}
-      {!tocando && (
-        <div className="tv-overlay">
-          <button className="botao-play" onClick={assistir}>
-            <span className="play-icone">▶</span>
-            Assistir agora
-          </button>
-          {aviso && <p className="tv-overlay-aviso">{aviso}</p>}
-        </div>
-      )}
-    </>
+    <iframe
+      ref={iframeRef}
+      className="stream-embed"
+      title="TV Attual — canal 24 horas e transmissões ao vivo"
+      src={LINKS.TV_UNIFIED_PLAYER_URL + '?embed=1'}
+      allow="autoplay; fullscreen; picture-in-picture"
+      allowFullScreen
+      loading="eager"
+      referrerPolicy="strict-origin-when-cross-origin"
+    />
   )
 }
 
-// Botão secundário: abre o mesmo stream em uma aba separada
 function LinksExternos() {
   return (
     <div className="tv-links-row">
-      <a
-        className="tv-link-web"
-        href={LINKS.TV_DIRECT_PLAYER_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Abrir player em nova aba ↗
+      <a className="tv-link-web" href={LINKS.TV_UNIFIED_PLAYER_URL}
+        target="_blank" rel="noopener noreferrer">
+        Abrir TV Attual em nova aba ↗
       </a>
     </div>
   )
 }
 
-export default function VideoPlayer() {
+export default function VideoPlayer({ onSourceChange }) {
   const [expandido, setExpandido] = useState(false)
+  const [source, setSource] = useState('unknown')
 
-  // Modal aberto: fecha com Esc e trava o scroll da página
   useEffect(() => {
     if (!expandido) return undefined
-    const aoTeclar = (evento) => {
-      if (evento.key === 'Escape') setExpandido(false)
+    const onKey = (event) => {
+      if (event.key === 'Escape') setExpandido(false)
     }
-    window.addEventListener('keydown', aoTeclar)
+    window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
-      window.removeEventListener('keydown', aoTeclar)
+      window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
   }, [expandido])
 
+  const handleSourceChange = useCallback((mode) => {
+    if (mode !== 'live' && mode !== 'recorded') return
+    setSource(mode)
+    onSourceChange?.(mode)
+  }, [onSourceChange])
+
+  const statusText = source === 'live' ? 'AO VIVO' : source === 'recorded' ? 'PROGRAMAÇÃO 24H' : 'CANAL TV ATTUAL'
+
   return (
     <>
-      {/* ---------- Modo compacto (Home) ---------- */}
-      <section className="tv-player" aria-label="TV Attual Ao Vivo">
+      <section className="tv-player" aria-label="TV Attual — Canal 24 Horas">
         <div className="tv-tela">
           {expandido ? (
-            // Enquanto o modal está aberto, o stream toca só lá (evita áudio duplicado)
             <div className="tv-overlay">
               <p className="tv-overlay-aviso">Reproduzindo no modo ampliado</p>
             </div>
           ) : (
-            <StreamPlayer />
+            <StreamPlayer onSourceChange={handleSourceChange} />
           )}
 
-          <span className="tag-live"><span className="dot" /> AO VIVO</span>
-
+          <span className="tag-live">{source === 'live' && <span className="dot" />} {statusText}</span>
           <button
             className="botao-ampliar"
             onClick={() => setExpandido(true)}
-            title="Ampliar"
-            aria-label="Ampliar player"
-          >
+            title="Ampliar" aria-label="Ampliar player">
             ⛶
           </button>
         </div>
-
         <LinksExternos />
       </section>
 
-      {/* ---------- Modo expandido (modal, mesmo stream) ---------- */}
       {expandido && (
         <div className="modal-overlay" onClick={() => setExpandido(false)}>
-          <div className="modal-conteudo" onClick={(evento) => evento.stopPropagation()}>
+          <div className="modal-conteudo" onClick={(event) => event.stopPropagation()}>
             <div className="modal-topo">
               <span className="modal-titulo">
-                <span className="dot" /> TV Attual Ao Vivo
+                {source === 'live' && <span className="dot" />} TV Attual — {statusText}
               </span>
-              <button
-                className="modal-fechar"
-                onClick={() => setExpandido(false)}
-                title="Fechar"
-                aria-label="Fechar player expandido"
-              >
-                ✕
-              </button>
+              <button className="modal-fechar" onClick={() => setExpandido(false)}
+                title="Fechar" aria-label="Fechar player expandido">✕</button>
             </div>
-
             <div className="tv-tela tv-tela-grande">
-              <StreamPlayer />
+              <StreamPlayer onSourceChange={handleSourceChange} />
             </div>
-
             <LinksExternos />
           </div>
         </div>
