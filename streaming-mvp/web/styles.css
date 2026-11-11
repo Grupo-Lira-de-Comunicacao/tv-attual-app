@@ -1,0 +1,23 @@
+:root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#f2f5fa;background:#071327;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}.container{width:min(1120px,100%);padding:clamp(12px,3vw,30px);margin:auto}
+.masthead{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 0 20px}
+.brand{font-size:clamp(24px,4vw,36px);font-weight:800;letter-spacing:.09em}.brand strong{color:#f37a33}
+.subbrand{font-size:11px;letter-spacing:.14em;color:#b9c7da}
+.player{position:relative;aspect-ratio:16/9;width:100%;background:radial-gradient(ellipse at 50% 35%,#12396e,#091a32 70%);border:1px solid #294265;border-radius:14px;overflow:hidden;box-shadow:0 16px 60px #0007}
+.player-top{position:absolute;z-index:2;inset:15px 16px auto;display:flex;justify-content:space-between;align-items:center;gap:10px;pointer-events:none}
+.signal{font-size:11px;letter-spacing:.06em;font-weight:800;border-radius:30px;padding:7px 11px}.offline{background:#2f3c53;color:#e6eaf4}.online{background:#cb263c;color:white}.station{font-size:12px;color:#e9efff;background:#071327b0;padding:6px 9px;border-radius:4px}
+video{display:block;width:100%;height:100%;object-fit:contain;background:#000}video[hidden]{display:none}
+.standby{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:25px}.standby[hidden]{display:none}
+.tv-icon{font-weight:900;border:2px solid #8ca3cd;color:#eaf2ff;border-radius:20%;padding:12px;margin-bottom:14px;letter-spacing:.06em}
+h1{font-size:clamp(24px,5vw,54px);margin:0}.standby p{font-size:clamp(13px,1.8vw,18px);color:#d0dbed;max-width:440px}
+button{font:inherit;border:1px solid #527ba8;border-radius:9px;cursor:pointer;background:#114476;color:#fff;padding:12px 18px;font-weight:650}button:hover,button:focus-visible{outline:2px solid #f8ac6d;outline-offset:2px}
+.footer{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 4px;color:#d2dbeb;font-size:14px}.footer button{background:transparent;padding:8px 12px}
+@media(max-width:520px){.player-top{inset:8px}.signal,.station{font-size:9px;padding:5px 7px}.standby{padding:45px 10px 10px}.standby p{margin:5px}.brand{font-size:23px}.subbrand{font-size:9px}}
+
+/* One shared player embedded by the official website and AttualPlay app. */
+.attual-embed body { background:#000; }
+.attual-embed .container { max-width:none; width:100%; padding:0; }
+.attual-embed .masthead, .attual-embed .footer { display:none; }
+.attual-embed .player { border:0; border-radius:0; box-shadow:none; }
+.attual-embed .player-top { inset:10px 12px auto; }
+.attual-embed .standby { background:#061327; }

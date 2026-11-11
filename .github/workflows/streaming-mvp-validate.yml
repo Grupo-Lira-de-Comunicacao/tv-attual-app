@@ -1,0 +1,38 @@
+name: TV Attual Streaming MVP - validacao isolada
+on:
+  pull_request:
+    paths:
+      - "streaming-mvp/**"
+      - ".github/workflows/streaming-mvp-validate.yml"
+  workflow_dispatch:
+jobs:
+  validate-streaming:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate isolated project
+        run: |
+          python -m unittest discover -s streaming-mvp/tests -p 'test*.py' -v
+          bash -n streaming-mvp/infra/stage-on-host-agent.sh
+          python -m py_compile streaming-mvp/infra/prepare_config.py streaming-mvp/services/status.py
+          node --check streaming-mvp/web/app.js
+          node streaming-mvp/tests/test_switch.cjs
+          docker compose -f streaming-mvp/infra/docker-compose.yml config --quiet
+      - name: Build AttualPlay with unified channel
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+      - name: Install FFmpeg for isolated media verification
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+      - name: RTMPS to HLS end-to-end (ephemeral CI only)
+        run: |
+          bash streaming-mvp/tests/e2e-ci.sh

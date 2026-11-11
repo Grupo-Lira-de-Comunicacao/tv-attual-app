@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="TV Attual 24 horas: programação do ErsatzTV e transmissões ao vivo em um único canal." />
+  <title>TV Attual | Canal 24 horas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="masthead"><span class="brand">TV <strong>ATTUAL</strong></span><span class="subbrand">TRANSMISSÃO OFICIAL</span></header>
+    <section class="player" aria-labelledby="streamTitle">
+      <div class="player-top"><span id="signal" class="signal offline" role="status" aria-live="polite">PROGRAMAÇÃO 24H</span><span class="station">Canal TV Attual</span></div>
+      <video id="video" controls playsinline preload="none" aria-label="TV Attual: transmissão ao vivo e programação 24 horas" hidden></video>
+      <div id="standby" class="standby"><div class="tv-icon" aria-hidden="true">TV</div><h1 id="streamTitle">TV Attual</h1><p id="notice">Carregando a programação da TV Attual...</p><button id="start" type="button" hidden>Assistir TV Attual</button></div>
+    </section>
+    <div class="footer"><p>TV Attual 24h • programação e transmissões ao vivo em um único canal.</p><button type="button" id="refresh">Verificar sinal</button></div>
+  </main>
+  <script defer src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js"></script>
+  <script defer src="/app.js"></script>
+</body>
+</html>

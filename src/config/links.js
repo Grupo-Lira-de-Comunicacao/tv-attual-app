@@ -10,6 +10,8 @@ export const LINKS = {
   // TV ao vivo — stream tocado dentro do app e link direto para nova aba
   TV_STREAM_URL: "https://tv.tvattual.com.br/iptv/channel/1.m3u8",
   TV_DIRECT_PLAYER_URL: "https://tv.tvattual.com.br/iptv/channel/1.m3u8",
+  // Canal unico: o player faz a troca automatica entre RTMPS ao vivo e ErsatzTV.
+  TV_UNIFIED_PLAYER_URL: "https://live.tvattual.com.br/",
 
   // --- Referência técnica interna (NÃO exibir no app para o público) ---
   // Painel de administração da TV: https://tv.tvattual.com.br/
