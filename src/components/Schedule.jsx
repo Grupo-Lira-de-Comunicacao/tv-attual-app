@@ -63,7 +63,7 @@ export default function Schedule({ onVoltar }) {
       {tvAberta && (
         <div className="programacao-player">
           <div className="programacao-player-topo">
-            <strong>TV Attual ao vivo</strong>
+            <strong>TV Attual — NO AR</strong>
             <button onClick={() => setTvAberta(false)} aria-label="Fechar player">✕</button>
           </div>
           <VideoPlayer />

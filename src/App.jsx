@@ -79,7 +79,7 @@ function App() {
           </div>
         </div>
         <span className="badge-ao-vivo">
-          <span className="dot" /> AO VIVO
+          <span className="dot" /> NO AR
         </span>
       </header>
 
@@ -97,7 +97,7 @@ function App() {
             <section className="no-ar">
               <span className="no-ar-badge"><span className="dot" /> NO AR AGORA</span>
               <h2>{atual?.titulo || 'TV Attual'}</h2>
-              <p>{atual?.descricao || 'Acompanhe a programação ao vivo da TV Attual.'}</p>
+              <p>{atual?.descricao || 'Acompanhe a programação gravada da TV Attual.'}</p>
               {proximo && (
                 <span className="no-ar-proximo">
                   <strong>A seguir:</strong> {proximo.titulo} · {proximo.hora}
