@@ -92,7 +92,7 @@ export default function VideoPlayer({ onSourceChange }) {
     onSourceChange?.(mode)
   }, [onSourceChange])
 
-  const statusText = source === 'live' ? 'AO VIVO' : source === 'recorded' ? 'PROGRAMAÇÃO 24H' : 'CANAL TV ATTUAL'
+  const statusText = source === 'unknown' ? 'CANAL TV ATTUAL' : 'NO AR'
 
   return (
     <>
