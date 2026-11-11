@@ -10,6 +10,7 @@ export const LINKS = {
   // TV ao vivo — stream tocado dentro do app e link direto para nova aba
   TV_STREAM_URL: "https://tv.tvattual.com.br/iptv/channel/1.m3u8",
   TV_DIRECT_PLAYER_URL: "https://tv.tvattual.com.br/iptv/channel/1.m3u8",
+  TV_UNIFIED_PLAYER_URL: "https://live.tvattual.com.br/",
 
   // --- Referência técnica interna (NÃO exibir no app para o público) ---
   // Painel de administração da TV: https://tv.tvattual.com.br/
@@ -17,6 +18,7 @@ export const LINKS = {
 
   RADIO_EMBED_URL: "https://radio.tvattual.com.br/public/radio_attual/embed",
   RADIO_STREAM_URL: "https://radio.tvattual.com.br/listen/radio_attual/radio.mp3",
+  RADIO_NOWPLAYING_URL: "https://radio.tvattual.com.br/api/nowplaying/1",
 
   TIKTOK_URL: "https://www.tiktok.com/@attualplayoficial",
   INSTAGRAM_URL: "https://www.instagram.com/attualplay",
