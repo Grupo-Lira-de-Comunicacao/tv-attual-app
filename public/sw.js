@@ -2,7 +2,7 @@
 // Guarda o "casco" do app em cache para abrir rápido e funcionar offline.
 // Streams de vídeo/áudio NUNCA são cacheados (sempre ao vivo).
 
-const CACHE = 'tv-attual-v1'
+const CACHE = 'tv-attual-v2'
 
 const APP_SHELL = [
   '/',
@@ -38,6 +38,8 @@ self.addEventListener('fetch', (evento) => {
   // Só GET do próprio domínio; streams e mídia ao vivo passam direto
   if (request.method !== 'GET') return
   if (url.origin !== self.location.origin) return
+  // Programação em tempo real não pode ser servida do cache offline.
+  if (url.pathname.startsWith('/api/')) return
   if (/\.(m3u8|m3u|ts|mp3|aac)$/.test(url.pathname)) return
 
   // Rede primeiro (app sempre atualizado); cache como reserva offline
