@@ -7,7 +7,7 @@ import Schedule from './components/Schedule.jsx'
 import Participation from './components/Participation.jsx'
 import PrivacyConsent from './components/PrivacyConsent.jsx'
 import MatrixForYou from './components/MatrixForYou.jsx'
-import { obterEstadoProgramacao } from './services/programacaoService.js'
+import NowPlaying from './components/NowPlaying.jsx'
 import { trackMatrixPage } from './services/matrixTelemetry.js'
 import './App.css'
 
@@ -22,7 +22,6 @@ function App() {
   const [abaAtiva, setAbaAtiva] = useState('home')
   const [abaAnterior, setAbaAnterior] = useState('home')
   const [matrixRefreshKey, setMatrixRefreshKey] = useState(0)
-  const { atual, proximo } = obterEstadoProgramacao()
 
   useEffect(() => {
     void trackMatrixPage(abaAtiva)
@@ -94,16 +93,7 @@ function App() {
           <>
             <VideoPlayer />
 
-            <section className="no-ar">
-              <span className="no-ar-badge"><span className="dot" /> NO AR AGORA</span>
-              <h2>{atual?.titulo || 'TV Attual'}</h2>
-              <p>{atual?.descricao || 'Acompanhe a programação gravada da TV Attual.'}</p>
-              {proximo && (
-                <span className="no-ar-proximo">
-                  <strong>A seguir:</strong> {proximo.titulo} · {proximo.hora}
-                </span>
-              )}
-            </section>
+            <NowPlaying />
 
             <RadioPlayer />
 
