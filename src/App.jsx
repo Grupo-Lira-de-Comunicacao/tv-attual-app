@@ -7,7 +7,6 @@ import Schedule from './components/Schedule.jsx'
 import Participation from './components/Participation.jsx'
 import PrivacyConsent from './components/PrivacyConsent.jsx'
 import MatrixForYou from './components/MatrixForYou.jsx'
-import { obterEstadoProgramacao } from './services/programacaoService.js'
 import { trackMatrixPage } from './services/matrixTelemetry.js'
 import './App.css'
 
@@ -22,7 +21,7 @@ function App() {
   const [abaAtiva, setAbaAtiva] = useState('home')
   const [abaAnterior, setAbaAnterior] = useState('home')
   const [matrixRefreshKey, setMatrixRefreshKey] = useState(0)
-  const { atual, proximo } = obterEstadoProgramacao()
+  const [modoTv, setModoTv] = useState('unknown')
 
   useEffect(() => {
     void trackMatrixPage(abaAtiva)
@@ -78,8 +77,9 @@ function App() {
             <p className="logo-lema">A informação que faz a diferença</p>
           </div>
         </div>
-        <span className="badge-ao-vivo">
-          <span className="dot" /> AO VIVO
+        <span className="badge-ao-vivo" aria-live="polite">
+          {modoTv === 'live' && <span className="dot" />}
+          {modoTv === 'live' ? 'AO VIVO' : modoTv === 'recorded' ? 'TV 24 HORAS' : 'CANAL TV ATTUAL'}
         </span>
       </header>
 
@@ -92,17 +92,18 @@ function App() {
           <Participation onVoltar={() => setAbaAtiva(abaAnterior)} />
         ) : (
           <>
-            <VideoPlayer />
+            <VideoPlayer onSourceChange={setModoTv} />
 
-            <section className="no-ar">
-              <span className="no-ar-badge"><span className="dot" /> NO AR AGORA</span>
-              <h2>{atual?.titulo || 'TV Attual'}</h2>
-              <p>{atual?.descricao || 'Acompanhe a programação ao vivo da TV Attual.'}</p>
-              {proximo && (
-                <span className="no-ar-proximo">
-                  <strong>A seguir:</strong> {proximo.titulo} · {proximo.hora}
-                </span>
-              )}
+            <section className="no-ar" aria-live="polite">
+              <span className="no-ar-badge">
+                {modoTv === 'live' ? 'TRANSMISSÃO AO VIVO' : modoTv === 'recorded' ? 'PROGRAMAÇÃO 24 HORAS' : 'CANAL TV ATTUAL'}
+              </span>
+              <h2>{modoTv === 'live' ? 'TV Attual — ao vivo' : 'TV Attual — canal oficial'}</h2>
+              <p>
+                {modoTv === 'live'
+                  ? 'Acompanhe a transmissão ao vivo da TV Attual.'
+                  : 'Assista à programação contínua. Os horários detalhados só serão mostrados quando vierem de uma fonte oficial atualizada.'}
+              </p>
             </section>
 
             <RadioPlayer />
