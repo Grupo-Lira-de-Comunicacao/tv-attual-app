@@ -143,7 +143,7 @@ export default function VideoPlayer() {
   return (
     <>
       {/* ---------- Modo compacto (Home) ---------- */}
-      <section className="tv-player" aria-label="TV Attual Ao Vivo">
+      <section className="tv-player" aria-label="TV Attual — NO AR">
         <div className="tv-tela">
           {expandido ? (
             // Enquanto o modal está aberto, o stream toca só lá (evita áudio duplicado)
@@ -154,7 +154,7 @@ export default function VideoPlayer() {
             <StreamPlayer />
           )}
 
-          <span className="tag-live"><span className="dot" /> AO VIVO</span>
+          <span className="tag-live"><span className="dot" /> NO AR</span>
 
           <button
             className="botao-ampliar"
@@ -175,7 +175,7 @@ export default function VideoPlayer() {
           <div className="modal-conteudo" onClick={(evento) => evento.stopPropagation()}>
             <div className="modal-topo">
               <span className="modal-titulo">
-                <span className="dot" /> TV Attual Ao Vivo
+                <span className="dot" /> TV Attual — NO AR
               </span>
               <button
                 className="modal-fechar"
