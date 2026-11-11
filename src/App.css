@@ -872,3 +872,60 @@
     grid-template-columns: repeat(6, 1fr);
   }
 }
+
+
+/* Metadados públicos da Rádio Attual — não controla o RadioDJ ou o AzuraCast */
+.radio-agora {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 10px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: var(--azul-card);
+}
+.radio-agora-capa,
+.radio-agora-sem-capa {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 10px;
+}
+.radio-agora-capa {
+  object-fit: cover;
+  background: var(--azul-card-claro);
+}
+.radio-agora-sem-capa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  background: rgba(45, 125, 255, 0.2);
+}
+.radio-agora-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+.radio-agora-label {
+  color: var(--laranja);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+.radio-agora-info strong {
+  color: var(--branco);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.radio-agora-info small,
+.radio-aviso {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+}
+.radio-aviso {
+  margin: 0;
+  padding: 4px 6px;
+}
