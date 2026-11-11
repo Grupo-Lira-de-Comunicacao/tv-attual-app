@@ -872,3 +872,31 @@
     grid-template-columns: repeat(6, 1fr);
   }
 }
+
+/* Link editorial verificado para o episódio que a TV está programando. */
+.no-ar-youtube {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(233, 30, 140, 0.6);
+  border-radius: 10px;
+  background: rgba(233, 30, 140, 0.12);
+  color: var(--branco);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.no-ar-youtube:hover,
+.no-ar-youtube:focus-visible {
+  background: rgba(233, 30, 140, 0.22);
+  outline-offset: 3px;
+}
+.programacao-aviso {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
