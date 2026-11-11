@@ -22,7 +22,7 @@ export const LINKS = {
   INSTAGRAM_URL: "https://www.instagram.com/attualplay",
   FACEBOOK_URL: "https://www.facebook.com/attualplay",
   YOUTUBE_URL: "https://www.youtube.com/@AttualPlay",
-  WHATSAPP_URL: "https://api.whatsapp.com/send?phone=5511987080279"
+  WHATSAPP_URL: "https://api.whatsapp.com/send?phone=5512935012325"
 };
 
 // Verdadeiro quando o link está preenchido com um valor real
