@@ -25,11 +25,11 @@ test('player integrado valida origem e janela do postMessage', () => {
   assert.doesNotMatch(source, /new Hls\(\)/)
 })
 
-test('indicacao de ao vivo so aparece com status real live', () => {
+test('indicacao NO AR representa sinal confirmado sem alegar transmissao ao vivo', () => {
   const app = read('src/App.jsx')
   const player = read('src/components/VideoPlayer.jsx')
-  assert.match(app, /modoTv === 'live' \? 'AO VIVO'/)
-  assert.match(player, /source === 'live' \? 'AO VIVO'/)
+  assert.match(app, /modoTv === 'unknown' \? 'CANAL TV ATTUAL' : 'NO AR'/)
+  assert.match(player, /source === 'unknown' \? 'CANAL TV ATTUAL' : 'NO AR'/)
   assert.match(app, /VideoPlayer onSourceChange=\{setModoTv\}/)
 })
 
