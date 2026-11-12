@@ -56,7 +56,14 @@ export default async function handler(req, res) {
     const estado = obterProgramacaoReal(xml, Date.now(), todos.videos)
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=30')
-    return res.status(200).json(estado)
+    return res.status(200).json({
+      ...estado,
+      catalogoYoutube: {
+        origem: novidades.length ? 'feed-publico-e-historico' : 'historico',
+        videosRecentes: novidades.length,
+        videosIndexados: todos.videos.length,
+      },
+    })
   } catch {
     res.setHeader('Cache-Control', 'no-store')
     return res.status(503).json({
