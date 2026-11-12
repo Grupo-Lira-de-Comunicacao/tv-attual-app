@@ -6,6 +6,7 @@ import catalogoPublico from '../data/youtube-catalog.json' with { type: 'json' }
 const XMLTV_URL = 'https://tv.tvattual.com.br/iptv/xmltv.xml'
 let proximaConsultaFeed = 0
 let cacheFeed = []
+let statusFeed = 'nao_consultado'
 let feedEmAndamento = null
 
 async function consultarFeed() {
@@ -19,12 +20,20 @@ async function consultarFeed() {
         headers: { Accept: 'application/atom+xml, application/xml' },
         cache: 'no-store',
       })
-      if (!resposta.ok) throw new Error('Feed temporariamente indisponível')
+      if (!resposta.ok) {
+        statusFeed = 'http-' + resposta.status
+        throw new Error('Feed temporariamente indisponível')
+      }
       const tamanho = Number(resposta.headers.get('content-length') || 0)
       if (tamanho > 1_200_000) throw new Error('Feed extenso')
       cacheFeed = lerFeedYoutube(await resposta.text())
+      statusFeed = 'ok'
       proximaConsultaFeed = Date.now() + 300_000
-    } catch {
+    } catch (erro) {
+      if (!statusFeed.startsWith('http-')) {
+        statusFeed = erro?.message === 'Feed de canal incorreto' ? 'canal-invalido' :
+          erro?.message === 'Feed não trouxe vídeos verificáveis' ? 'feed-vazio' : 'erro-rede-ou-validacao'
+      }
       // Nunca falhar a programação porque o YouTube demorou ou ficou indisponível.
     } finally {
       feedEmAndamento = null
@@ -62,6 +71,7 @@ export default async function handler(req, res) {
         origem: novidades.length ? 'feed-publico-e-historico' : 'historico',
         videosRecentes: novidades.length,
         videosIndexados: todos.videos.length,
+        statusFeed,
       },
     })
   } catch {
