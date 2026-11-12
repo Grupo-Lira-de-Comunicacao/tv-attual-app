@@ -14,6 +14,7 @@ async function consultarFeed() {
   if (feedEmAndamento) return feedEmAndamento
   feedEmAndamento = (async () => {
     proximaConsultaFeed = Date.now() + 120_000
+    statusFeed = 'consultando'
     try {
       const resposta = await fetch(YOUTUBE_FEED_URL, {
         signal: AbortSignal.timeout(4500),
