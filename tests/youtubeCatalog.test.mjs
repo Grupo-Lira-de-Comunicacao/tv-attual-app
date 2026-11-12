@@ -28,6 +28,7 @@ test('feed público AttualPlay: valida canal, IDs e entidades XML, sem API key',
   assert.match(videos[0].title, /Simone Moreira & comunidade/)
   assert.ok(YOUTUBE_FEED_URL.includes(YOUTUBE_CHANNEL_ID))
   assert.equal(videos[0].summary, 'Atitude Feminina: Simone')
+  assert.equal(lerFeedYoutube(feed.replaceAll(YOUTUBE_CHANNEL_ID, YOUTUBE_CHANNEL_ID.slice(2))).length, 2)
   assert.throws(() => lerFeedYoutube(feed.replaceAll(YOUTUBE_CHANNEL_ID, 'UC0000000000000000000000')))
   assert.throws(() => lerFeedYoutube('not a feed'))
   assert.throws(() => lerFeedYoutube('x'.repeat(1_200_001)))
