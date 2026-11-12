@@ -93,7 +93,10 @@ test('endpoint JSON usa somente origem pública e trata falhas sem falsa program
   try {
     await handler({ method: 'GET' }, response)
     assert.equal(response.statusCode, 200)
-    assert.deepEqual(calls, ['https://tv.tvattual.com.br/iptv/xmltv.xml'])
+    assert.deepEqual(calls, [
+      'https://tv.tvattual.com.br/iptv/xmltv.xml',
+      'https://www.youtube.com/feeds/videos.xml?channel_id=UC5u5RAdVyJ_jarLlAnt4gXA',
+    ])
     assert.equal(response.body.fonte, 'ersatztv-xmltv')
     assert.ok(response.headers['Cache-Control'].includes('s-maxage'))
     const denied = { ...response, headers: {}, statusCode: 200 }

@@ -1,0 +1,50 @@
+name: Sincronizar catalogo publico do YouTube
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: attualplay-catalogo-youtube
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    name: Atualizar indices publicos
+    if: github.repository == 'Grupo-Lira-de-Comunicacao/tv-attual-app'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Baixar e validar feed oficial
+        run: node scripts/sync-youtube-catalog.mjs
+
+      - name: Verificar testes e build
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Registrar apenas as alteracoes de dados
+        run: |
+          if git diff --quiet -- data/youtube-catalog.json; then
+            echo "Sem novas publicacoes; nenhum commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/youtube-catalog.json
+          git commit -m "chore(data): atualizar indice publico de videos AttualPlay"
+          git push origin HEAD:main
