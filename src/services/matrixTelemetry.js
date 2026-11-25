@@ -362,7 +362,7 @@ export async function linkMatrixIdentity(bridgeCode) {
 }
 
 // A pending privacy request disables tracking and linking immediately on this device.
- // The existing opaque session token is retained solely for retry until the server confirms.
+// The existing opaque session token is retained solely for retry until the server confirms.
 let privacyInFlight = null
 
 function pendingToken() {
@@ -400,7 +400,7 @@ export async function retryMatrixPrivacySync() {
 async function enqueuePrivacy(kind, consent = null) {
   if (privacyInFlight) await privacyInFlight
   const previous = getMatrixPrivacyPending()
-  if (previous) return retryMatrixPrivacySync()
+  if (previous && (previous.kind === 'unlink' || kind !== 'unlink')) return retryMatrixPrivacySync()
   if (!pendingToken()) return { ok: true, pending: false }
   const request = { id: newId(), kind, ...(consent ? { consent } : {}) }
   safeSet(localStorage, PRIVACY_PENDING_KEY, JSON.stringify(request))
