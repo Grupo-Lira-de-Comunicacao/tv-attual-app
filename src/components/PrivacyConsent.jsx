@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   getMatrixConsent,
   getMatrixIdentityState,
+  getMatrixPrivacyPending,
+  retryMatrixPrivacySync,
   hasMatrixConsentDecision,
   linkMatrixIdentity,
   MATRIX_POLICY_VERSION,
@@ -22,6 +24,7 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
   const [identity, setIdentity] = useState(() => getMatrixIdentityState())
   const [bridgeCode, setBridgeCode] = useState('')
   const [identityBusy, setIdentityBusy] = useState(false)
+  const [privacyPending, setPrivacyPending] = useState(() => Boolean(getMatrixPrivacyPending()))
   const [identityMessage, setIdentityMessage] = useState('')
 
   const analyticsEnabled = consent.analytics === true
@@ -31,17 +34,37 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
     return consent.personalization ? 'Analytics + personalização autorizados' : 'Analytics autorizado · personalização desativada'
   }, [analyticsEnabled, consent.personalization, identity.connected])
 
+  useEffect(() => {
+    async function retryPending() {
+      if (!getMatrixPrivacyPending()) return
+      const result = await retryMatrixPrivacySync()
+      setPrivacyPending(Boolean(getMatrixPrivacyPending()))
+      setIdentity(getMatrixIdentityState())
+      setIdentityMessage(result.ok
+        ? 'Solicitação de privacidade confirmada pelo servidor.'
+        : 'Solicitação pendente no servidor. Analytics e personalização estão suspensos neste dispositivo. Se persistir, solicite atendimento ao titular.')
+    }
+    void retryPending()
+    window.addEventListener('online', retryPending)
+    return () => window.removeEventListener('online', retryPending)
+  }, [])
+
   function refreshFromStorage() {
     const current = getMatrixConsent()
     setConsent(current)
     setAdultConfirmed(current.adult_confirmed === true)
     setPersonalization(current.personalization === true)
     setIdentity(getMatrixIdentityState())
+    setPrivacyPending(Boolean(getMatrixPrivacyPending()))
   }
 
   async function applyChoice(analytics) {
+    if (analytics && getMatrixPrivacyPending()) {
+      setIdentityMessage('Conclua a solicitação de privacidade pendente antes de alterar as preferências.')
+      return
+    }
     const previous = getMatrixConsent()
-    const wasIdentified = getMatrixIdentityState().connected
+    const wasIdentified = getMatrixIdentityState().connected || Boolean(getMatrixPrivacyPending())
     const next = setMatrixConsent({
       analytics,
       adult_confirmed: analytics ? adultConfirmed : false,
@@ -55,11 +78,13 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
     setOpen(false)
 
     if (wasIdentified) {
-      if (!next.analytics) {
-        await unlinkMatrixIdentity()
-      } else {
-        const synced = await syncMatrixConsentServer(next)
-        if (!synced.ok) setIdentityMessage('A preferência local foi salva; a sincronização com a Matrix será tentada novamente quando você reconectar.')
+      const synced = !next.analytics ? await unlinkMatrixIdentity() : await syncMatrixConsentServer(next)
+      setPrivacyPending(Boolean(getMatrixPrivacyPending()))
+      if (!synced.ok) {
+        setIdentityMessage('Preferência local salva. Confirmação do servidor pendente; analytics e personalização estão suspensos neste dispositivo.')
+        onPersonalizationChanged?.(false)
+        setIdentity(getMatrixIdentityState())
+        return
       }
       setIdentity(getMatrixIdentityState())
     }
@@ -96,9 +121,11 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
     setIdentityMessage('')
     const result = await unlinkMatrixIdentity()
     setIdentity(getMatrixIdentityState())
+    setPrivacyPending(Boolean(getMatrixPrivacyPending()))
+    onPersonalizationChanged?.(false)
     setIdentityMessage(result.ok
       ? 'Identidade desconectada. O vínculo e a sessão Matrix foram revogados.'
-      : 'A sessão local foi removida. A Matrix poderá concluir a revogação assim que estiver disponível.')
+      : 'Identidade suspensa neste dispositivo. A revogação no servidor ainda não foi confirmada. Tente novamente; se persistir, solicite atendimento ao titular.')
     setIdentityBusy(false)
   }
 
@@ -153,7 +180,7 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
             <button type="button" className="privacidade-botao" onClick={() => void applyChoice(false)}>
               Rejeitar analytics
             </button>
-            <button type="button" className="privacidade-botao" disabled={!adultConfirmed} onClick={() => void applyChoice(true)}>
+            <button type="button" className="privacidade-botao" disabled={!adultConfirmed || privacyPending} onClick={() => void applyChoice(true)}>
               Salvar preferências
             </button>
           </div>
@@ -199,7 +226,20 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
               não envia nome, e-mail, telefone ou CPF para a Matrix. Não existe descoberta oculta de identidade.
             </p>
 
-            {identity.connected ? (
+            {privacyPending ? (
+              <div className="privacidade-identidade">
+                <strong>Solicitação de privacidade pendente</strong>
+                <p>Analytics e personalização estão suspensos neste dispositivo até a confirmação. Não gere outra conexão enquanto houver pendência.</p>
+                <button type="button" className="privacidade-botao" disabled={identityBusy} onClick={async () => {
+                  setIdentityBusy(true)
+                  const result = await retryMatrixPrivacySync()
+                  setPrivacyPending(Boolean(getMatrixPrivacyPending()))
+                  setIdentity(getMatrixIdentityState())
+                  setIdentityMessage(result.ok ? 'Solicitação confirmada.' : 'Ainda sem confirmação. Se persistir, solicite atendimento ao titular.')
+                  setIdentityBusy(false)
+                }}>Tentar novamente</button>
+              </div>
+            ) : identity.connected ? (
               <div className="privacidade-identidade">
                 <strong>Identidade conectada</strong>
                 <p>A sessão identificada fica revogável e só é usada enquanto os consentimentos necessários estiverem ativos.</p>
@@ -289,7 +329,7 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
               <button type="button" className="privacidade-botao" onClick={() => void applyChoice(false)}>
                 Rejeitar / revogar analytics
               </button>
-              <button type="button" className="privacidade-botao" disabled={!adultConfirmed} onClick={() => void applyChoice(true)}>
+              <button type="button" className="privacidade-botao" disabled={!adultConfirmed || privacyPending} onClick={() => void applyChoice(true)}>
                 Salvar preferências
               </button>
             </div>

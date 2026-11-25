@@ -8,6 +8,7 @@ export const MATRIX_POLICY_VERSION = 'attualplay-privacy-v4-2026-09-07'
 const CONSENT_STORAGE_KEY = 'matrix:consent:v1'
 const ANON_STORAGE_KEY = 'matrix:anonymous-id:v1'
 const PERSON_SESSION_STORAGE_KEY = 'matrix:person-session:v1'
+const PRIVACY_PENDING_KEY = 'matrix:privacy-pending:v1'
 const SESSION_STORAGE_KEY = 'matrix:session-id:v1'
 const SESSION_STARTED_KEY = 'matrix:session-started:v1'
 
@@ -57,7 +58,13 @@ function getSessionId() {
   return value
 }
 
+export function getMatrixPrivacyPending() {
+  try { return JSON.parse(safeGet(localStorage, PRIVACY_PENDING_KEY) || 'null') } catch { return null }
+}
+
 export function getMatrixIdentityState() {
+  const pending = getMatrixPrivacyPending()
+  if (pending?.kind === 'unlink') return { connected: false, person_id: null, expires_at: null, pending: true }
   const raw = safeGet(localStorage, PERSON_SESSION_STORAGE_KEY)
   if (!raw) return { connected: false, person_id: null, expires_at: null }
   try {
@@ -76,7 +83,7 @@ export function getMatrixIdentityState() {
 
 function getMatrixPersonToken() {
   const state = getMatrixIdentityState()
-  if (!state.connected) return null
+  if (!state.connected || getMatrixPrivacyPending()) return null
   try {
     const parsed = JSON.parse(safeGet(localStorage, PERSON_SESSION_STORAGE_KEY) || '{}')
     return typeof parsed.person_token === 'string' ? parsed.person_token : null
@@ -193,7 +200,7 @@ function classifyReferrer() {
 
 function readyForAnalytics() {
   const consent = getMatrixConsent()
-  return TRACKING_ENABLED && hasMatrixConsentDecision() && Boolean(API_URL) && Boolean(PUBLIC_KEY) && consent.analytics === true && consent.adult_confirmed === true
+  return !getMatrixPrivacyPending() && TRACKING_ENABLED && hasMatrixConsentDecision() && Boolean(API_URL) && Boolean(PUBLIC_KEY) && consent.analytics === true && consent.adult_confirmed === true
 }
 
 function readyForPersonalization() {
@@ -332,6 +339,7 @@ export async function fetchMatrixRecommendation() {
 
 export async function linkMatrixIdentity(bridgeCode) {
   const consent = getMatrixConsent()
+  if (getMatrixPrivacyPending()) return { ok: false, error: 'Conclua a solicitação de privacidade pendente antes de conectar outra conta.' }
   if (!readyForPersonalization()) {
     return { ok: false, error: 'Ative analytics, confirme 18+ e autorize personalização antes de conectar sua conta.' }
   }
@@ -353,35 +361,59 @@ export async function linkMatrixIdentity(bridgeCode) {
   return { ok: true, identity: getMatrixIdentityState(), attual_one_link_status: body.attual_one_link_status || 'linked' }
 }
 
+// A pending privacy request disables tracking and linking immediately on this device.
+// The existing opaque session token is retained solely for retry until the server confirms.
+let privacyInFlight = null
+
+function pendingToken() {
+  try { return JSON.parse(safeGet(localStorage, PERSON_SESSION_STORAGE_KEY) || '{}').person_token || null } catch { return null }
+}
+
+export async function retryMatrixPrivacySync() {
+  if (privacyInFlight) return privacyInFlight
+  const request = getMatrixPrivacyPending()
+  if (!request) return { ok: true, pending: false }
+  const token = pendingToken()
+  if (!token) return { ok: false, pending: true }
+  privacyInFlight = (async () => {
+    const response = await matrixPost(request.kind === 'unlink' ? '/v1/identity/unlink' : '/v1/consents', {
+      project_key: 'attualplay',
+      person_token: token,
+      ...(request.kind === 'consent' ? { consent: request.consent } : {}),
+    })
+    if (!response?.ok) return { ok: false, pending: true, status: response?.status || 0 }
+    let body
+    try { body = await response.json() } catch { return { ok: false, pending: true } }
+    const confirmed = request.kind === 'unlink'
+      ? body?.unlinked === true && body?.attual_one_link_status === 'revoked'
+      : Boolean(body?.consent)
+    if (!confirmed) return { ok: false, pending: true }
+    // Do not discard a newer request or a different session.
+    if (getMatrixPrivacyPending()?.id !== request.id || pendingToken() !== token) return { ok: false, pending: true }
+    if (request.kind === 'unlink') clearMatrixPersonSession()
+    safeRemove(localStorage, PRIVACY_PENDING_KEY)
+    return { ok: true, pending: false }
+  })().finally(() => { privacyInFlight = null })
+  return privacyInFlight
+}
+
+async function enqueuePrivacy(kind, consent = null) {
+  if (privacyInFlight) await privacyInFlight
+  const previous = getMatrixPrivacyPending()
+  if (previous && (previous.kind === 'unlink' || kind !== 'unlink')) return retryMatrixPrivacySync()
+  if (!pendingToken()) return { ok: true, pending: false }
+  const request = { id: newId(), kind, ...(consent ? { consent } : {}) }
+  safeSet(localStorage, PRIVACY_PENDING_KEY, JSON.stringify(request))
+  if (getMatrixPrivacyPending()?.id !== request.id) return { ok: false, pending: true }
+  return retryMatrixPrivacySync()
+}
+
 export async function syncMatrixConsentServer(consentOverride = null) {
-  const personToken = getMatrixPersonToken()
-  if (!personToken) return { ok: true, identified: false }
-  const consent = consentOverride || getMatrixConsent()
-  const response = await matrixPost('/v1/consents', {
-    project_key: 'attualplay',
-    person_token: personToken,
-    consent: matrixM4Consent(consent),
-  })
-  if (!response) return { ok: false, identified: true }
-  if (response.status === 401) {
-    clearMatrixPersonSession()
-    return { ok: false, identified: false }
-  }
-  return { ok: response.ok, identified: true }
+  return enqueuePrivacy('consent', matrixM4Consent(consentOverride || getMatrixConsent()))
 }
 
 export async function unlinkMatrixIdentity() {
-  const personToken = getMatrixPersonToken()
-  if (!personToken) {
-    clearMatrixPersonSession()
-    return { ok: true, identified: false }
-  }
-  const response = await matrixPost('/v1/identity/unlink', {
-    project_key: 'attualplay',
-    person_token: personToken,
-  })
-  clearMatrixPersonSession()
-  return { ok: Boolean(response?.ok), identified: false }
+  return enqueuePrivacy('unlink')
 }
 
 export function trackMatrixRecommendationShown(recommendationId) {
