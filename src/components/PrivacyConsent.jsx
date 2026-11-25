@@ -59,12 +59,12 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
   }
 
   async function applyChoice(analytics) {
-    if (getMatrixPrivacyPending()) {
+    if (analytics && getMatrixPrivacyPending()) {
       setIdentityMessage('Conclua a solicitação de privacidade pendente antes de alterar as preferências.')
       return
     }
     const previous = getMatrixConsent()
-    const wasIdentified = getMatrixIdentityState().connected
+    const wasIdentified = getMatrixIdentityState().connected || Boolean(getMatrixPrivacyPending())
     const next = setMatrixConsent({
       analytics,
       adult_confirmed: analytics ? adultConfirmed : false,
@@ -177,7 +177,7 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
             </button>
           </div>
           <div className="privacidade-acoes">
-            <button type="button" className="privacidade-botao" disabled={privacyPending} onClick={() => void applyChoice(false)}>
+            <button type="button" className="privacidade-botao" onClick={() => void applyChoice(false)}>
               Rejeitar analytics
             </button>
             <button type="button" className="privacidade-botao" disabled={!adultConfirmed || privacyPending} onClick={() => void applyChoice(true)}>
@@ -326,7 +326,7 @@ export default function PrivacyConsent({ onAnalyticsGranted, onPersonalizationCh
 
             <div className="privacidade-status" aria-live="polite">{statusLabel}</div>
             <div className="privacidade-acoes privacidade-acoes-modal">
-              <button type="button" className="privacidade-botao" disabled={privacyPending} onClick={() => void applyChoice(false)}>
+              <button type="button" className="privacidade-botao" onClick={() => void applyChoice(false)}>
                 Rejeitar / revogar analytics
               </button>
               <button type="button" className="privacidade-botao" disabled={!adultConfirmed || privacyPending} onClick={() => void applyChoice(true)}>
